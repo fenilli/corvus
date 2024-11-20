@@ -1,6 +1,8 @@
 mod any_map;
 mod entity;
 
+use std::any::Any;
+
 use any_map::AnyMap;
 use entity::{GenerationalIndex, GenerationalIndexAllocator, GenerationalIndexVec};
 

@@ -1,4 +1,4 @@
-#[derive(Eq, PartialEq, Clone, Copy, Debug)]
+#[derive(Eq, PartialEq, Clone, Copy)]
 pub struct GenerationalIndex {
     pub(self) id: usize,
     pub(self) generation: u32,
@@ -62,39 +62,43 @@ struct VecEntry<T> {
     generation: u32,
 }
 
-pub struct GenerationalIndexVec<T>(Vec<Option<VecEntry<T>>>);
+pub struct GenerationalIndexVec<T> {
+    entries: Vec<Option<VecEntry<Box<T>>>>,
+}
 
 impl<T> GenerationalIndexVec<T> {
     pub fn new() -> Self {
-        Self(Vec::new())
+        Self {
+            entries: Vec::new(),
+        }
     }
 
     pub fn set(&mut self, index: GenerationalIndex, value: T) {
-        if index.id >= self.0.len() {
-            self.0.resize_with(index.id + 1, || None);
+        if index.id >= self.entries.len() {
+            self.entries.resize_with(index.id + 1, || None);
         }
 
-        self.0[index.id] = Some(VecEntry {
-            value,
+        self.entries[index.id] = Some(VecEntry {
+            value: Box::new(value),
             generation: index.generation,
         });
     }
 
     pub fn get(&self, index: GenerationalIndex) -> Option<&T> {
-        self.0.get(index.id).and_then(|entry| {
+        self.entries.get(index.id).and_then(|entry| {
             entry
                 .as_ref()
                 .filter(|entry| entry.generation == index.generation)
-                .map(|entry| &entry.value)
+                .map(|entry| &*entry.value)
         })
     }
 
     pub fn get_mut(&mut self, index: GenerationalIndex) -> Option<&mut T> {
-        self.0.get_mut(index.id).and_then(|entry| {
+        self.entries.get_mut(index.id).and_then(|entry| {
             entry
                 .as_mut()
                 .filter(|entry| entry.generation == index.generation)
-                .map(|entry| &mut entry.value)
+                .map(|entry| &mut *entry.value)
         })
     }
 }
