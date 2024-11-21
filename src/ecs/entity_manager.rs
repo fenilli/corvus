@@ -9,9 +9,9 @@ impl Entity {
         self.id
     }
 
-    // pub fn generation(&self) -> u32 {
-    //     self.generation
-    // }
+    pub fn generation(&self) -> u32 {
+        self.generation
+    }
 }
 
 struct Entry {

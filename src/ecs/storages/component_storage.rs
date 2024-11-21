@@ -4,7 +4,7 @@ use super::dyn_storage::DynStorage;
 
 struct Entry<T> {
     value: T,
-    // generation: u32,
+    generation: u32,
 }
 
 pub struct ComponentStorage<T> {
@@ -27,7 +27,7 @@ impl<T: 'static> ComponentStorage<T> {
 
         self.components[id] = Some(Entry {
             value,
-            // generation: entity.generation(),
+            generation: entity.generation(),
         })
     }
 
@@ -35,6 +35,7 @@ impl<T: 'static> ComponentStorage<T> {
         self.components
             .get(entity.id())?
             .as_ref()
+            .filter(|entry| entry.generation == entity.generation())
             .map(|entry| &entry.value)
     }
 
@@ -42,13 +43,20 @@ impl<T: 'static> ComponentStorage<T> {
         self.components
             .get_mut(entity.id())?
             .as_mut()
+            .filter(|entry| entry.generation == entity.generation())
             .map(|entry| &mut entry.value)
     }
 }
 
 impl<T: 'static> DynStorage for ComponentStorage<T> {
     fn remove(&mut self, entity: Entity) {
-        self.components.remove(entity.id());
+        if let Some(entry) = self.components.get_mut(entity.id()) {
+            if let Some(component_entry) = entry {
+                if component_entry.generation == entity.generation() {
+                    *entry = None;
+                }
+            }
+        }
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
