@@ -63,7 +63,7 @@ struct VecEntry<T> {
 }
 
 pub struct GenerationalIndexVec<T> {
-    entries: Vec<Option<VecEntry<Box<T>>>>,
+    entries: Vec<Option<VecEntry<T>>>,
 }
 
 impl<T> GenerationalIndexVec<T> {
@@ -79,7 +79,7 @@ impl<T> GenerationalIndexVec<T> {
         }
 
         self.entries[index.id] = Some(VecEntry {
-            value: Box::new(value),
+            value,
             generation: index.generation,
         });
     }
@@ -89,7 +89,7 @@ impl<T> GenerationalIndexVec<T> {
             entry
                 .as_ref()
                 .filter(|entry| entry.generation == index.generation)
-                .map(|entry| &*entry.value)
+                .map(|entry| &entry.value)
         })
     }
 
@@ -98,7 +98,7 @@ impl<T> GenerationalIndexVec<T> {
             entry
                 .as_mut()
                 .filter(|entry| entry.generation == index.generation)
-                .map(|entry| &mut *entry.value)
+                .map(|entry| &mut entry.value)
         })
     }
 }
