@@ -1,59 +1,63 @@
-mod any_map;
-mod entity;
+mod entity_manager;
+mod storages;
 
-use std::any::Any;
+use std::{any::TypeId, collections::HashMap};
 
-use any_map::AnyMap;
-use entity::{GenerationalIndex, GenerationalIndexAllocator, GenerationalIndexVec};
+use entity_manager::{Entity, EntityManager};
+use storages::{component_storage::ComponentStorage, dyn_storage::DynStorage};
 
 pub struct ECS {
-    entity_allocator: GenerationalIndexAllocator,
+    entity_manager: EntityManager,
 
-    entity_components: AnyMap,
-    resources: AnyMap,
+    component_storages: HashMap<TypeId, Box<dyn DynStorage>>,
 }
 
 impl ECS {
     pub fn new() -> Self {
         Self {
-            entity_allocator: GenerationalIndexAllocator::new(),
-            entity_components: AnyMap::new(),
-            resources: AnyMap::new(),
+            entity_manager: EntityManager::new(),
+
+            component_storages: HashMap::new(),
         }
     }
 
-    pub fn create_entity(&mut self) -> GenerationalIndex {
-        self.entity_allocator.allocate()
+    pub fn create_entity(&mut self) -> Entity {
+        self.entity_manager.allocate()
     }
 
-    pub fn set_component<T: 'static>(&mut self, index: GenerationalIndex, component: T) {
-        let component_map = self.entity_components.get_mut::<GenerationalIndexVec<T>>();
-
-        match component_map {
-            None => {
-                self.entity_components.set(GenerationalIndexVec::<T>::new());
-                let component_map = self
-                    .entity_components
-                    .get_mut::<GenerationalIndexVec<T>>()
-                    .unwrap();
-
-                component_map.set(index, component);
+    pub fn destroy_entity(&mut self, entity: Entity) {
+        if self.entity_manager.deallocate(entity) {
+            for component_storage in self.component_storages.values_mut() {
+                component_storage.remove(entity);
             }
-            Some(component_map) => {
-                component_map.set(index, component);
-            }
-        };
+        }
     }
 
-    pub fn get_component<T: 'static>(&self, index: GenerationalIndex) -> Option<&T> {
-        self.entity_components
-            .get::<GenerationalIndexVec<T>>()
-            .and_then(|component_map| component_map.get(index))
+    pub fn set_component<T: 'static>(&mut self, entity: Entity, component: T) {
+        self.component_storages
+            .entry(TypeId::of::<T>())
+            .or_insert_with(|| Box::new(ComponentStorage::<T>::new()))
+            .downcast_mut::<ComponentStorage<T>>()
+            .and_then(|component_storage| Some(component_storage.insert(entity, component)));
     }
 
-    pub fn get_component_mut<T: 'static>(&mut self, index: GenerationalIndex) -> Option<&mut T> {
-        self.entity_components
-            .get_mut::<GenerationalIndexVec<T>>()
-            .and_then(|component_map| component_map.get_mut(index))
+    pub fn get_component<T: 'static>(&self, entity: Entity) -> Option<&T> {
+        self.component_storages
+            .get(&TypeId::of::<T>())
+            .and_then(|component_storage| {
+                component_storage
+                    .downcast_ref::<ComponentStorage<T>>()?
+                    .get(entity)
+            })
+    }
+
+    pub fn get_component_mut<T: 'static>(&mut self, entity: Entity) -> Option<&mut T> {
+        self.component_storages
+            .get_mut(&TypeId::of::<T>())
+            .and_then(|component_storage| {
+                component_storage
+                    .downcast_mut::<ComponentStorage<T>>()?
+                    .get_mut(entity)
+            })
     }
 }

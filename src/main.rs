@@ -18,4 +18,10 @@ fn main() {
     if let Some(health) = ecs.get_component::<u32>(e2) {
         println!("{}", health);
     }
+
+    ecs.destroy_entity(e1);
+
+    if let Some(health) = ecs.get_component::<u32>(e1) {
+        println!("{}", health);
+    }
 }
