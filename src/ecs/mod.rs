@@ -11,6 +11,7 @@ use storages::{
 
 pub struct ECS {
     entity_manager: EntityManager,
+    entities: Vec<Entity>,
 
     component_map: ComponentMap,
     resource_map: ResourceMap,
@@ -20,6 +21,7 @@ impl ECS {
     pub fn new() -> Self {
         Self {
             entity_manager: EntityManager::new(),
+            entities: Vec::new(),
 
             component_map: ComponentMap::new(),
             resource_map: ResourceMap::new(),
@@ -27,15 +29,23 @@ impl ECS {
     }
 
     pub fn create_entity(&mut self) -> Entity {
-        self.entity_manager.allocate()
+        let entity = self.entity_manager.allocate();
+        self.entities.push(entity);
+
+        entity
     }
 
     pub fn destroy_entity(&mut self, entity: Entity) {
         if self.entity_manager.deallocate(entity) {
+            self.entities.remove(entity.id());
             for component_storage in self.component_map.values_mut() {
                 component_storage.remove(entity);
             }
         }
+    }
+
+    pub fn entities(&self) -> &Vec<Entity> {
+        &self.entities
     }
 
     pub fn set_component<T: 'static>(&mut self, entity: Entity, component: T) {

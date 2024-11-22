@@ -24,18 +24,10 @@ fn main() {
     ecs.set_component::<u32>(e1, 10);
     ecs.set_component::<u32>(e2, 20);
 
-    if let Some(health) = ecs.get_component::<u32>(e1) {
-        let resource = ecs.get_resource::<Resource>();
-        println!("{}, {:?}", health, resource);
-    }
-
-    if let Some(health) = ecs.get_component::<u32>(e2) {
-        println!("{}", health);
-    }
-
-    ecs.destroy_entity(e1);
-
-    if let Some(health) = ecs.get_component::<u32>(e1) {
-        println!("{}", health);
+    let resource = ecs.get_resource::<Resource>();
+    for entity in ecs.entities() {
+        if let Some(health) = ecs.get_component::<u32>(*entity) {
+            println!("{} - {:?}", health, resource);
+        }
     }
 }
