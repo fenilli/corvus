@@ -28,7 +28,7 @@ fn main() {
         let iter = names
             .iter()
             .zip(healths.iter_mut())
-            .filter_map(|(name, health)| Some((name.as_ref()?, health.as_mut()?)));
+            .filter_map(|(name, health)| Some((name, health)));
 
         for (name, health) in iter {
             println!("Name {:?} - Health {:?}", name.0, health.0);
