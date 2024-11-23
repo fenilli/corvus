@@ -5,39 +5,34 @@ use std::{thread, time::Duration};
 use ecs::ECS;
 
 #[derive(Debug)]
-pub struct PositionComponent {
-    x: f32,
-    y: f32,
-}
+pub struct HealthComponent(i16);
 
-impl PositionComponent {
-    pub fn new(x: f32, y: f32) -> Self {
-        Self { x, y }
-    }
-
-    pub fn from_u32(x: u32, y: u32) -> Self {
-        Self::new(x as f32, y as f32)
-    }
-}
-
-pub fn movement_system(ecs: &ECS) {
-    let entities = ecs.entities();
-
-    for entity in entities {
-        if let Some(position) = ecs.get_component::<PositionComponent>(*entity) {
-            println!("{:?}", position);
-        }
-    }
-}
+#[derive(Debug)]
+pub struct NameComponent(&'static str);
 
 fn main() {
     let mut ecs = ECS::new();
 
     let player = ecs.create_entity();
-    ecs.set_component(player, PositionComponent::from_u32(200, 200));
+    ecs.set_component(player, HealthComponent(10));
+    ecs.set_component(player, NameComponent("Fenilli"));
+
+    let enemy = ecs.create_entity();
+    ecs.set_component(enemy, HealthComponent(5));
+    ecs.set_component(enemy, NameComponent("Globin"));
 
     loop {
-        movement_system(&ecs);
+        let names = ecs.get_components::<NameComponent>().unwrap();
+        let mut healths = ecs.get_components_mut::<HealthComponent>().unwrap();
+
+        let iter = names
+            .iter()
+            .zip(healths.iter_mut())
+            .filter_map(|(name, health)| Some((name.as_ref()?, health.as_mut()?)));
+
+        for (name, health) in iter {
+            println!("Name {:?} - Health {:?}", name.0, health.0);
+        }
 
         thread::sleep(Duration::from_millis(1000 / 60));
     }
