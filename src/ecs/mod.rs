@@ -28,7 +28,13 @@ impl ECS {
     }
 
     pub fn destroy_entity(&self, entity: Entity) -> bool {
-        self.entity_pool.deallocate(entity)
+        if self.entity_pool.deallocate(entity) {
+            self.component_manager.clear_components(entity.id());
+
+            true
+        } else {
+            false
+        }
     }
 
     pub fn set_component<T: 'static>(&self, entity: Entity, component: T) {

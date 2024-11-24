@@ -7,6 +7,7 @@ use std::{
 trait ComponentVec {
     fn as_any(&self) -> &dyn std::any::Any;
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
+    fn remove(&mut self, index: usize);
 }
 
 struct SparseSet<T> {
@@ -24,30 +25,13 @@ impl<T: 'static> SparseSet<T> {
         }
     }
 
-    pub fn insert(&mut self, index: usize, data: T) {
+    fn insert(&mut self, index: usize, data: T) {
         if let Some(&dense_idx) = self.sparse.get(&index) {
             self.data[dense_idx] = data;
         } else {
             self.sparse.insert(index, self.dense.len());
             self.dense.push(index);
             self.data.push(data);
-        }
-    }
-
-    pub fn remove(&mut self, index: usize) {
-        if let Some(&dense_idx) = self.sparse.get(&index) {
-            let last_idx = self.dense.len() - 1;
-
-            if dense_idx != last_idx {
-                let temp_last_idx = self.dense[last_idx];
-                self.dense[dense_idx] = temp_last_idx;
-                self.sparse.insert(temp_last_idx, dense_idx);
-                self.data.swap(dense_idx, last_idx);
-            }
-
-            self.dense.pop();
-            self.data.pop();
-            self.sparse.remove(&index);
         }
     }
 
@@ -72,6 +56,23 @@ impl<T: 'static> ComponentVec for SparseSet<T> {
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
+
+    fn remove(&mut self, index: usize) {
+        if let Some(&dense_idx) = self.sparse.get(&index) {
+            let last_idx = self.dense.len() - 1;
+
+            if dense_idx != last_idx {
+                let temp_last_idx = self.dense[last_idx];
+                self.dense[dense_idx] = temp_last_idx;
+                self.sparse.insert(temp_last_idx, dense_idx);
+                self.data.swap(dense_idx, last_idx);
+            }
+
+            self.dense.pop();
+            self.data.pop();
+            self.sparse.remove(&index);
+        }
+    }
 }
 
 pub struct ComponentManager {
@@ -94,6 +95,12 @@ impl ComponentManager {
         }
     }
 
+    pub fn clear_components(&self, index: usize) {
+        for (_, cell) in self.components.iter() {
+            cell.borrow_mut().remove(index);
+        }
+    }
+
     pub fn insert<T: 'static>(&self, index: usize, component: T) {
         if let Some(cell) = self.components.get(&TypeId::of::<T>()) {
             let mut storage = cell.borrow_mut();
@@ -107,7 +114,7 @@ impl ComponentManager {
         }
     }
 
-    pub fn remove<T: 'static>(&self, index: usize) {
+    pub fn remove_component<T: 'static>(&self, index: usize) {
         if let Some(cell) = self.components.get(&TypeId::of::<T>()) {
             let mut storage = cell.borrow_mut();
             let sparse_set = storage
@@ -120,35 +127,35 @@ impl ComponentManager {
         }
     }
 
-    pub fn get_component<T: 'static>(&self, index: usize) -> Option<Ref<T>> {
-        if let Some(cell) = self.components.get(&TypeId::of::<T>()) {
-            return Some(Ref::map(cell.borrow(), |sparse_set| {
-                sparse_set
-                    .as_any()
-                    .downcast_ref::<SparseSet<T>>()
-                    .unwrap()
-                    .get(index)
-                    .unwrap()
-            }));
-        }
+    // pub fn get_component<T: 'static>(&self, index: usize) -> Option<Ref<T>> {
+    //     if let Some(cell) = self.components.get(&TypeId::of::<T>()) {
+    //         return Some(Ref::map(cell.borrow(), |sparse_set| {
+    //             sparse_set
+    //                 .as_any()
+    //                 .downcast_ref::<SparseSet<T>>()
+    //                 .unwrap()
+    //                 .get(index)
+    //                 .unwrap()
+    //         }));
+    //     }
 
-        None
-    }
+    //     None
+    // }
 
-    pub fn get_component_mut<T: 'static>(&self, index: usize) -> Option<RefMut<T>> {
-        if let Some(cell) = self.components.get(&TypeId::of::<T>()) {
-            return Some(RefMut::map(cell.borrow_mut(), |sparse_set| {
-                sparse_set
-                    .as_any_mut()
-                    .downcast_mut::<SparseSet<T>>()
-                    .unwrap()
-                    .get_mut(index)
-                    .unwrap()
-            }));
-        }
+    // pub fn get_component_mut<T: 'static>(&self, index: usize) -> Option<RefMut<T>> {
+    //     if let Some(cell) = self.components.get(&TypeId::of::<T>()) {
+    //         return Some(RefMut::map(cell.borrow_mut(), |sparse_set| {
+    //             sparse_set
+    //                 .as_any_mut()
+    //                 .downcast_mut::<SparseSet<T>>()
+    //                 .unwrap()
+    //                 .get_mut(index)
+    //                 .unwrap()
+    //         }));
+    //     }
 
-        None
-    }
+    //     None
+    // }
 
     pub fn get_components<T: 'static>(&self) -> Option<Ref<Vec<T>>> {
         if let Some(cell) = self.components.get(&TypeId::of::<T>()) {
