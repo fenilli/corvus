@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Entity {
     id: usize,
@@ -26,55 +24,51 @@ enum PoolEntry {
 
 #[derive(Debug)]
 pub struct EntityPool {
-    entries: RefCell<Vec<PoolEntry>>,
-    free_list: RefCell<Vec<usize>>,
+    entries: Vec<PoolEntry>,
+    free_list: Vec<usize>,
 }
 
 impl EntityPool {
     pub fn new() -> Self {
         Self {
-            entries: RefCell::new(Vec::new()),
-            free_list: RefCell::new(Vec::new()),
+            entries: Vec::new(),
+            free_list: Vec::new(),
         }
     }
 
-    pub fn allocate(&self) -> Entity {
-        let mut entries = self.entries.borrow_mut();
-        let mut free_list = self.free_list.borrow_mut();
+    pub fn allocate(&mut self) -> Entity {
+        let Some(id) = self.free_list.pop() else {
+            let id = self.entries.len();
+            self.entries.push(PoolEntry::Occupied(0));
+            return Entity::new(id, 0);
+        };
 
-        if let Some(id) = free_list.pop() {
-            if let PoolEntry::Occupied(generation) = entries[id] {
-                Entity::new(id, generation)
-            } else {
-                panic!("Tried to reference a non-occupied entry from the free list!")
-            }
+        if let PoolEntry::Occupied(generation) = self.entries[id] {
+            Entity::new(id, generation)
         } else {
-            let id = entries.len();
-            entries.push(PoolEntry::Occupied(0));
-            Entity::new(id, 0)
+            panic!("Tried to reference a non-occupied entry from the free list!")
         }
     }
 
-    pub fn deallocate(&self, entity: Entity) -> bool {
-        let mut entries = self.entries.borrow_mut();
-        let mut free_list = self.free_list.borrow_mut();
+    pub fn deallocate(&mut self, entity: Entity) -> bool {
+        let Some(entry) = self.entries.get_mut(entity.id) else {
+            return false;
+        };
 
-        if let Some(entry) = entries.get_mut(entity.id) {
-            if let PoolEntry::Occupied(generation) = entry {
-                *generation += 1;
-                *entry = PoolEntry::Free;
-                free_list.push(entity.id);
+        let PoolEntry::Occupied(generation) = entry else {
+            return false;
+        };
 
-                return true;
-            }
-        }
+        *generation += 1;
+        *entry = PoolEntry::Free;
+        self.free_list.push(entity.id);
 
-        false
+        true
     }
 
     pub fn is_valid(&self, entity: Entity) -> bool {
         matches!(
-            self.entries.borrow().get(entity.id),
+            self.entries.get(entity.id),
             Some(PoolEntry::Occupied(generation)) if *generation == entity.generation
         )
     }

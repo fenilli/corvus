@@ -1,7 +1,7 @@
 mod component_manager;
 mod entity_pool;
 
-use std::cell::{Ref, RefMut};
+use std::cell::{Ref, RefCell, RefMut};
 
 use component_manager::ComponentManager;
 use entity_pool::{Entity, EntityPool};
@@ -19,22 +19,22 @@ impl ECS {
         }
     }
 
-    pub fn register_component<T: 'static>(&mut self) {
-        self.component_manager.register::<T>();
-    }
-
-    pub fn create_entity(&self) -> Entity {
+    pub fn create_entity(&mut self) -> Entity {
         self.entity_pool.allocate()
     }
 
-    pub fn destroy_entity(&self, entity: Entity) -> bool {
+    pub fn destroy_entity(&mut self, entity: Entity) -> bool {
         if self.entity_pool.deallocate(entity) {
-            self.component_manager.clear_components(entity.id());
+            self.component_manager.clean(entity.id());
 
             true
         } else {
             false
         }
+    }
+
+    pub fn register_component<T: 'static>(&mut self) {
+        self.component_manager.register::<T>();
     }
 
     pub fn set_component<T: 'static>(&self, entity: Entity, component: T) {
@@ -45,11 +45,11 @@ impl ECS {
         self.component_manager.insert(entity.id(), component);
     }
 
-    pub fn get_components<T: 'static>(&self) -> Option<Ref<'_, Vec<T>>> {
-        self.component_manager.get_components()
+    pub fn get_components<T: 'static>(&self) -> Option<Ref<Vec<T>>> {
+        self.component_manager.get_all::<T>()
     }
 
-    pub fn get_components_mut<T: 'static>(&self) -> Option<RefMut<'_, Vec<T>>> {
-        self.component_manager.get_components_mut()
+    pub fn get_components_mut<T: 'static>(&self) -> Option<RefMut<Vec<T>>> {
+        self.component_manager.get_all_mut::<T>()
     }
 }
