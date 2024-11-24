@@ -12,6 +12,8 @@ pub struct NameComponent(&'static str);
 
 fn main() {
     let mut ecs = ECS::new();
+    ecs.register_component::<HealthComponent>();
+    ecs.register_component::<NameComponent>();
 
     let player = ecs.create_entity();
     ecs.set_component(player, HealthComponent(10));
