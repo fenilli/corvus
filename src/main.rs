@@ -5,36 +5,60 @@ use std::{thread, time::Duration};
 use ecs::ECS;
 
 #[derive(Debug)]
-pub struct HealthComponent(i16);
+pub struct PlayerTag;
 
 #[derive(Debug)]
-pub struct NameComponent(&'static str);
+pub struct PositionComponent {
+    x: u32,
+    y: u32,
+}
+
+impl PositionComponent {
+    pub fn new(x: u32, y: u32) -> Self {
+        Self { x, y }
+    }
+}
+
+struct Ticker {
+    ticks: u32,
+}
+
+fn update_player(ecs: &ECS, ticker: &Ticker) {
+    let tags = ecs.get_components::<PlayerTag>().unwrap();
+    let mut positions = ecs.get_components_mut::<PositionComponent>().unwrap();
+
+    let iter = tags
+        .iter()
+        .zip(positions.iter_mut())
+        .filter_map(|(tag, position)| Some((tag, position)));
+
+    for (tag, position) in iter {
+        println!("Tag: {:?} | Position: {:?}", tag, position);
+
+        if ticker.ticks % 120 == 0 {
+            position.x += 10;
+        }
+    }
+}
 
 fn main() {
+    let mut ticker = Ticker { ticks: 0 };
+
     let mut ecs = ECS::new();
-    ecs.register_component::<HealthComponent>();
-    ecs.register_component::<NameComponent>();
+    ecs.register_component::<PlayerTag>();
+    ecs.register_component::<PositionComponent>();
 
     let player = ecs.create_entity();
-    ecs.set_component(player, HealthComponent(10));
-    ecs.set_component(player, NameComponent("Fenilli"));
+    ecs.set_component(player, PlayerTag);
+    ecs.set_component(player, PositionComponent::new(100, 100));
 
     let enemy = ecs.create_entity();
-    ecs.set_component(enemy, HealthComponent(5));
-    ecs.set_component(enemy, NameComponent("Globin"));
+    ecs.set_component(enemy, PositionComponent::new(200, 200));
 
     loop {
-        let names = ecs.get_components::<NameComponent>().unwrap();
-        let mut healths = ecs.get_components_mut::<HealthComponent>().unwrap();
+        ticker.ticks += 1;
 
-        let iter = names
-            .iter()
-            .zip(healths.iter_mut())
-            .filter_map(|(name, health)| Some((name, health)));
-
-        for (name, health) in iter {
-            println!("Name {:?} - Health {:?}", name.0, health.0);
-        }
+        update_player(&ecs, &ticker);
 
         thread::sleep(Duration::from_millis(1000 / 60));
     }
