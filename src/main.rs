@@ -1,3 +1,6 @@
+mod ecs;
+mod game;
+
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, KeyEvent},
@@ -6,35 +9,37 @@ use winit::{
     window::Window,
 };
 
-mod ecs;
+use game::states::app_state::{self, AppState};
 
-enum AppState {
+enum LifecycleState {
     Initializing,
-    Running(Window),
-    AboutToClose,
+    Running(AppState),
+    Closing,
 }
 
 struct App {
-    state: AppState,
+    lifecycle_state: LifecycleState,
 }
 
 impl App {
     pub fn new() -> Self {
         Self {
-            state: AppState::Initializing,
+            lifecycle_state: LifecycleState::Initializing,
         }
     }
 }
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        match self.state {
-            AppState::Initializing => {
-                self.state = AppState::Running(
+        match self.lifecycle_state {
+            LifecycleState::Initializing => {
+                let app_state = AppState::new(
                     event_loop
                         .create_window(Window::default_attributes().with_title("Corvus"))
                         .unwrap(),
                 );
+
+                self.lifecycle_state = LifecycleState::Running(app_state);
             }
             _ => (),
         };
@@ -46,9 +51,11 @@ impl ApplicationHandler for App {
         _window_id: winit::window::WindowId,
         event: winit::event::WindowEvent,
     ) {
-        match &self.state {
-            AppState::Running(window) => match event {
-                winit::event::WindowEvent::CloseRequested => self.state = AppState::AboutToClose,
+        match &mut self.lifecycle_state {
+            LifecycleState::Running(app_state) => match event {
+                winit::event::WindowEvent::CloseRequested => {
+                    self.lifecycle_state = LifecycleState::Closing
+                }
                 winit::event::WindowEvent::KeyboardInput {
                     event:
                         KeyEvent {
@@ -59,12 +66,12 @@ impl ApplicationHandler for App {
                     ..
                 } => match logical_key.as_ref() {
                     Key::Named(NamedKey::Escape) => {
-                        self.state = AppState::AboutToClose;
+                        self.lifecycle_state = LifecycleState::Closing;
                     }
                     _ => (),
                 },
                 winit::event::WindowEvent::RedrawRequested => {
-                    println!("Redraw Requested");
+                    app_state.update();
                 }
                 _ => (),
             },
@@ -73,9 +80,9 @@ impl ApplicationHandler for App {
     }
 
     fn about_to_wait(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        match &self.state {
-            AppState::Running(window) => window.request_redraw(),
-            AppState::AboutToClose => event_loop.exit(),
+        match &self.lifecycle_state {
+            LifecycleState::Running(app_state) => app_state.window().request_redraw(),
+            LifecycleState::Closing => event_loop.exit(),
             _ => (),
         };
     }
