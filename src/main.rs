@@ -1,65 +1,88 @@
+use winit::{
+    application::ApplicationHandler,
+    event::{ElementState, KeyEvent},
+    event_loop::EventLoop,
+    keyboard::{Key, NamedKey},
+    window::Window,
+};
+
 mod ecs;
 
-use std::{thread, time::Duration};
-
-use ecs::ECS;
-
-#[derive(Debug)]
-pub struct PlayerTag;
-
-#[derive(Debug)]
-pub struct PositionComponent {
-    x: u32,
-    y: u32,
+enum AppState {
+    Initializing,
+    Running(Window),
+    AboutToClose,
 }
 
-impl PositionComponent {
-    pub fn new(x: u32, y: u32) -> Self {
-        Self { x, y }
-    }
+struct App {
+    state: AppState,
 }
 
-struct Ticker {
-    ticks: u32,
-}
-
-fn update_player(ecs: &ECS, ticker: &Ticker) {
-    let tags = ecs.get_components::<PlayerTag>().unwrap();
-    let mut positions = ecs.get_components_mut::<PositionComponent>().unwrap();
-
-    let iter = tags
-        .iter()
-        .zip(positions.iter_mut())
-        .filter_map(|(tag, position)| Some((tag, position)));
-
-    for (tag, position) in iter {
-        println!("Tag: {:?} | Position: {:?}", tag, position);
-
-        if ticker.ticks % 120 == 0 {
-            position.x += 10;
+impl App {
+    pub fn new() -> Self {
+        Self {
+            state: AppState::Initializing,
         }
     }
 }
 
-fn main() {
-    let mut ticker = Ticker { ticks: 0 };
-
-    let mut ecs = ECS::new();
-    ecs.register_component::<PlayerTag>();
-    ecs.register_component::<PositionComponent>();
-
-    let player = ecs.create_entity();
-    ecs.set_component(player, PlayerTag);
-    ecs.set_component(player, PositionComponent::new(100, 100));
-
-    let enemy = ecs.create_entity();
-    ecs.set_component(enemy, PositionComponent::new(200, 200));
-
-    loop {
-        ticker.ticks += 1;
-
-        update_player(&ecs, &ticker);
-
-        thread::sleep(Duration::from_millis(1000 / 60));
+impl ApplicationHandler for App {
+    fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+        match self.state {
+            AppState::Initializing => {
+                self.state = AppState::Running(
+                    event_loop
+                        .create_window(Window::default_attributes().with_title("Corvus"))
+                        .unwrap(),
+                );
+            }
+            _ => (),
+        };
     }
+
+    fn window_event(
+        &mut self,
+        _event_loop: &winit::event_loop::ActiveEventLoop,
+        _window_id: winit::window::WindowId,
+        event: winit::event::WindowEvent,
+    ) {
+        match &self.state {
+            AppState::Running(window) => match event {
+                winit::event::WindowEvent::CloseRequested => self.state = AppState::AboutToClose,
+                winit::event::WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            logical_key,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => match logical_key.as_ref() {
+                    Key::Named(NamedKey::Escape) => {
+                        self.state = AppState::AboutToClose;
+                    }
+                    _ => (),
+                },
+                winit::event::WindowEvent::RedrawRequested => {
+                    println!("Redraw Requested");
+                }
+                _ => (),
+            },
+            _ => (),
+        }
+    }
+
+    fn about_to_wait(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+        match &self.state {
+            AppState::Running(window) => window.request_redraw(),
+            AppState::AboutToClose => event_loop.exit(),
+            _ => (),
+        };
+    }
+}
+
+fn main() {
+    let event_loop = EventLoop::new().unwrap();
+    let mut app = App::new();
+    _ = event_loop.run_app(&mut app);
 }
