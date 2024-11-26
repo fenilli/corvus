@@ -2,14 +2,10 @@ mod ecs;
 mod game;
 
 use winit::{
-    application::ApplicationHandler,
-    event::{ElementState, KeyEvent},
-    event_loop::EventLoop,
-    keyboard::{Key, NamedKey},
-    window::Window,
+    application::ApplicationHandler, event::WindowEvent, event_loop::EventLoop, window::Window,
 };
 
-use game::states::app_state::{self, AppState};
+use game::states::app_state::AppState;
 
 enum LifecycleState {
     Initializing,
@@ -53,27 +49,9 @@ impl ApplicationHandler for App {
     ) {
         match &mut self.lifecycle_state {
             LifecycleState::Running(app_state) => match event {
-                winit::event::WindowEvent::CloseRequested => {
-                    self.lifecycle_state = LifecycleState::Closing
-                }
-                winit::event::WindowEvent::KeyboardInput {
-                    event:
-                        KeyEvent {
-                            logical_key,
-                            state: ElementState::Pressed,
-                            ..
-                        },
-                    ..
-                } => match logical_key.as_ref() {
-                    Key::Named(NamedKey::Escape) => {
-                        self.lifecycle_state = LifecycleState::Closing;
-                    }
-                    _ => (),
-                },
-                winit::event::WindowEvent::RedrawRequested => {
-                    app_state.update();
-                }
-                _ => (),
+                WindowEvent::CloseRequested => self.lifecycle_state = LifecycleState::Closing,
+                WindowEvent::RedrawRequested => app_state.update(),
+                _ => app_state.window_event(event),
             },
             _ => (),
         }
