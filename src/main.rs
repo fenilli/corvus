@@ -1,4 +1,5 @@
 mod game;
+mod input;
 mod world;
 
 use winit::{
@@ -53,13 +54,19 @@ impl ApplicationHandler for App {
         _: winit::window::WindowId,
         event: winit::event::WindowEvent,
     ) {
-        let AppState::Running(ref _app_state) = self.state else {
+        let AppState::Running(app_state) = &mut self.state else {
             return;
         };
 
         match event {
+            WindowEvent::KeyboardInput { event, .. } => app_state.input().keyboard_input(event),
+            WindowEvent::MouseInput { state, button, .. } => {
+                app_state.input().mouse_input(state, button)
+            }
+            WindowEvent::MouseWheel { delta, .. } => app_state.input().mouse_wheel(delta),
+            WindowEvent::CursorMoved { position, .. } => app_state.input().cursor_moved(position),
             WindowEvent::RedrawRequested => {
-                println!("RedrawRequested");
+                // println!("RedrawRequested");
             }
             WindowEvent::CloseRequested => self.state = AppState::Closing,
             _ => (),
