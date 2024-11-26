@@ -2,6 +2,8 @@ mod game;
 mod input;
 mod world;
 
+use std::{thread::sleep, time::Duration};
+
 use winit::{
     application::ApplicationHandler, dpi::PhysicalSize, event::WindowEvent, event_loop::EventLoop,
     window::Window,
@@ -63,10 +65,10 @@ impl ApplicationHandler for App {
             WindowEvent::MouseInput { state, button, .. } => {
                 app_state.input().mouse_input(state, button)
             }
-            WindowEvent::MouseWheel { delta, .. } => app_state.input().mouse_wheel(delta),
             WindowEvent::CursorMoved { position, .. } => app_state.input().cursor_moved(position),
             WindowEvent::RedrawRequested => {
-                // println!("RedrawRequested");
+                app_state.update();
+                sleep(Duration::from_secs(1 / 60));
             }
             WindowEvent::CloseRequested => self.state = AppState::Closing,
             _ => (),
@@ -74,8 +76,11 @@ impl ApplicationHandler for App {
     }
 
     fn about_to_wait(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        match &self.state {
-            AppState::Running(app_state) => app_state.window().request_redraw(),
+        match &mut self.state {
+            AppState::Running(app_state) => {
+                app_state.input().clear();
+                app_state.window().request_redraw();
+            }
             AppState::Closing => event_loop.exit(),
             _ => (),
         };

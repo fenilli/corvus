@@ -20,6 +20,20 @@ impl Game {
         }
     }
 
+    pub fn update(&mut self) {
+        // if self.input.key_pressed(winit::keyboard::KeyCode::KeyW) {
+        //     println!("Pressed W");
+        // }
+
+        // if self.input.key_held(winit::keyboard::KeyCode::KeyW) {
+        //     println!("Holding W");
+        // }
+
+        // if self.input.key_released(winit::keyboard::KeyCode::KeyW) {
+        //     println!("Released W");
+        // }
+    }
+
     pub fn input(&mut self) -> &mut Input {
         &mut self.input
     }
