@@ -1,17 +1,17 @@
 mod component_manager;
 mod entity_pool;
 
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::{Ref, RefMut};
 
 use component_manager::ComponentManager;
 use entity_pool::{Entity, EntityPool};
 
-pub struct ECS {
+pub struct World {
     entity_pool: EntityPool,
     component_manager: ComponentManager,
 }
 
-impl ECS {
+impl World {
     pub fn new() -> Self {
         Self {
             entity_pool: EntityPool::new(),
