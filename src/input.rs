@@ -1,67 +1,69 @@
+use std::collections::HashMap;
+
 use winit::{
     dpi::PhysicalPosition,
     event::{ElementState, KeyEvent, MouseButton},
     keyboard::{KeyCode, PhysicalKey},
 };
 
-#[derive(PartialEq, Eq)]
-pub enum InputAction<T> {
-    Held(T),
-    Pressed(T),
-    Released(T),
+#[derive(PartialEq, Eq, Debug)]
+pub enum InputState {
+    Idle,
+    Pressed,
+    Held,
+    Released,
 }
 
 pub struct Input {
-    key_actions: Vec<InputAction<KeyCode>>,
-    mouse_actions: Vec<InputAction<MouseButton>>,
+    key_states: HashMap<KeyCode, InputState>,
+    mouse_states: HashMap<MouseButton, InputState>,
     cursor_position: PhysicalPosition<f64>,
 }
 
 impl Input {
     pub fn new() -> Self {
         Self {
-            key_actions: Vec::new(),
-            mouse_actions: Vec::new(),
+            key_states: HashMap::new(),
+            mouse_states: HashMap::new(),
             cursor_position: PhysicalPosition::new(0.0, 0.0),
         }
     }
 
-    pub fn clear(&mut self) {
-        self.key_actions.clear();
-        self.mouse_actions.clear();
+    pub fn end_frame(&mut self) {
+        for input_state in self.key_states.values_mut() {
+            if *input_state == InputState::Pressed {
+                *input_state = InputState::Held
+            } else if *input_state == InputState::Released {
+                *input_state = InputState::Idle
+            }
+        }
     }
 
     pub fn keyboard_input(&mut self, event: KeyEvent) {
+        let PhysicalKey::Code(key_code) = event.physical_key else {
+            return;
+        };
+
+        let input_state = self.key_states.entry(key_code).or_insert(InputState::Idle);
         match event.state {
             ElementState::Pressed => {
-                let PhysicalKey::Code(key_code) = event.physical_key else {
-                    return;
-                };
-
-                if event.repeat {
-                    self.key_actions.push(InputAction::Held(key_code));
-                } else {
-                    self.key_actions.push(InputAction::Pressed(key_code));
+                if *input_state != InputState::Held {
+                    *input_state = InputState::Pressed
                 }
             }
-            ElementState::Released => {
-                let PhysicalKey::Code(key_code) = event.physical_key else {
-                    return;
-                };
-
-                self.key_actions.push(InputAction::Released(key_code));
-            }
+            ElementState::Released => *input_state = InputState::Released,
         };
     }
 
     pub fn mouse_input(&mut self, state: ElementState, button: MouseButton) {
+        let input_state = self.mouse_states.entry(button).or_insert(InputState::Idle);
         match state {
             ElementState::Pressed => {
-                self.mouse_actions.push(InputAction::Pressed(button));
+                if *input_state != InputState::Held {
+                    *input_state = InputState::Pressed
+                }
             }
-            ElementState::Released => {
-                self.mouse_actions.push(InputAction::Released(button));
-            }
+            ElementState::Released => *input_state = InputState::Released,
         };
     }
 
@@ -69,24 +71,36 @@ impl Input {
         self.cursor_position = position;
     }
 
+    fn contains_key_with_value<K, V>(map: &HashMap<K, V>, key: &K, value: &V) -> bool
+    where
+        K: Eq + std::hash::Hash,
+        V: PartialEq,
+    {
+        map.get(key) == Some(value)
+    }
+
     pub fn key_pressed(&self, key_code: KeyCode) -> bool {
-        self.key_actions.contains(&InputAction::Pressed(key_code))
+        Input::contains_key_with_value(&self.key_states, &key_code, &InputState::Pressed)
     }
 
     pub fn key_released(&self, key_code: KeyCode) -> bool {
-        self.key_actions.contains(&InputAction::Released(key_code))
+        Input::contains_key_with_value(&self.key_states, &key_code, &InputState::Released)
     }
 
     pub fn key_held(&self, key_code: KeyCode) -> bool {
-        self.key_actions.contains(&InputAction::Held(key_code))
+        Input::contains_key_with_value(&self.key_states, &key_code, &InputState::Held)
     }
 
     pub fn mouse_pressed(&self, button: MouseButton) -> bool {
-        self.mouse_actions.contains(&InputAction::Pressed(button))
+        Input::contains_key_with_value(&self.mouse_states, &button, &InputState::Pressed)
     }
 
     pub fn mouse_released(&self, button: MouseButton) -> bool {
-        self.mouse_actions.contains(&InputAction::Released(button))
+        Input::contains_key_with_value(&self.mouse_states, &button, &InputState::Released)
+    }
+
+    pub fn mouse_held(&self, button: MouseButton) -> bool {
+        Input::contains_key_with_value(&self.mouse_states, &button, &InputState::Held)
     }
 
     pub fn cursor_position(&self) -> PhysicalPosition<f64> {

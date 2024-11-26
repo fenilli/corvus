@@ -68,7 +68,7 @@ impl ApplicationHandler for App {
             WindowEvent::CursorMoved { position, .. } => app_state.input().cursor_moved(position),
             WindowEvent::RedrawRequested => {
                 app_state.update();
-                sleep(Duration::from_secs(1 / 60));
+                sleep(Duration::from_secs(1 / 60)); // Simulation of 60 fps.
             }
             WindowEvent::CloseRequested => self.state = AppState::Closing,
             _ => (),
@@ -78,7 +78,7 @@ impl ApplicationHandler for App {
     fn about_to_wait(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
         match &mut self.state {
             AppState::Running(app_state) => {
-                app_state.input().clear();
+                app_state.input().end_frame();
                 app_state.window().request_redraw();
             }
             AppState::Closing => event_loop.exit(),
