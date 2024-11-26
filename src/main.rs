@@ -60,12 +60,9 @@ impl ApplicationHandler for App {
             return;
         };
 
+        app_state.input().start_step(&event);
+
         match event {
-            WindowEvent::KeyboardInput { event, .. } => app_state.input().keyboard_input(event),
-            WindowEvent::MouseInput { state, button, .. } => {
-                app_state.input().mouse_input(state, button)
-            }
-            WindowEvent::CursorMoved { position, .. } => app_state.input().cursor_moved(position),
             WindowEvent::RedrawRequested => {
                 app_state.update();
                 sleep(Duration::from_secs(1 / 60)); // Simulation of 60 fps.
@@ -78,7 +75,7 @@ impl ApplicationHandler for App {
     fn about_to_wait(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
         match &mut self.state {
             AppState::Running(app_state) => {
-                app_state.input().end_frame();
+                app_state.input().end_step();
                 app_state.window().request_redraw();
             }
             AppState::Closing => event_loop.exit(),

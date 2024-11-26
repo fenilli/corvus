@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use winit::{
     dpi::PhysicalPosition,
-    event::{ElementState, KeyEvent, MouseButton},
+    event::{ElementState, KeyEvent, MouseButton, WindowEvent},
     keyboard::{KeyCode, PhysicalKey},
 };
 
@@ -29,17 +29,7 @@ impl Input {
         }
     }
 
-    pub fn end_frame(&mut self) {
-        for input_state in self.key_states.values_mut() {
-            if *input_state == InputState::Pressed {
-                *input_state = InputState::Held
-            } else if *input_state == InputState::Released {
-                *input_state = InputState::Idle
-            }
-        }
-    }
-
-    pub fn keyboard_input(&mut self, event: KeyEvent) {
+    fn keyboard_input(&mut self, event: &KeyEvent) {
         let PhysicalKey::Code(key_code) = event.physical_key else {
             return;
         };
@@ -55,8 +45,8 @@ impl Input {
         };
     }
 
-    pub fn mouse_input(&mut self, state: ElementState, button: MouseButton) {
-        let input_state = self.mouse_states.entry(button).or_insert(InputState::Idle);
+    fn mouse_input(&mut self, state: &ElementState, button: &MouseButton) {
+        let input_state = self.mouse_states.entry(*button).or_insert(InputState::Idle);
         match state {
             ElementState::Pressed => {
                 if *input_state != InputState::Held {
@@ -67,8 +57,8 @@ impl Input {
         };
     }
 
-    pub fn cursor_moved(&mut self, position: PhysicalPosition<f64>) {
-        self.cursor_position = position;
+    fn cursor_moved(&mut self, position: &PhysicalPosition<f64>) {
+        self.cursor_position = *position;
     }
 
     fn contains_key_with_value<K, V>(map: &HashMap<K, V>, key: &K, value: &V) -> bool
@@ -77,6 +67,31 @@ impl Input {
         V: PartialEq,
     {
         map.get(key) == Some(value)
+    }
+
+    pub fn start_step(&mut self, event: &WindowEvent) {
+        match event {
+            WindowEvent::KeyboardInput { event, .. } => {
+                self.keyboard_input(event);
+            }
+            WindowEvent::MouseInput { state, button, .. } => {
+                self.mouse_input(state, button);
+            }
+            WindowEvent::CursorMoved { position, .. } => {
+                self.cursor_moved(position);
+            }
+            _ => (),
+        }
+    }
+
+    pub fn end_step(&mut self) {
+        for input_state in self.key_states.values_mut() {
+            if *input_state == InputState::Pressed {
+                *input_state = InputState::Held
+            } else if *input_state == InputState::Released {
+                *input_state = InputState::Idle
+            }
+        }
     }
 
     pub fn key_pressed(&self, key_code: KeyCode) -> bool {
