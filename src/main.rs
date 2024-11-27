@@ -1,3 +1,4 @@
+mod clock;
 mod game;
 mod input;
 mod world;

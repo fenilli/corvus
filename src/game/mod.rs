@@ -2,11 +2,12 @@ use std::sync::Arc;
 
 use winit::window::Window;
 
-use crate::{input::Input, world::World};
+use crate::{clock::Clock, input::Input, world::World};
 
 pub struct Game {
-    input: Input,
     world: World,
+    input: Input,
+    clock: Clock,
 
     window: Arc<Window>,
 }
@@ -14,23 +15,17 @@ pub struct Game {
 impl Game {
     pub fn new(window: Window) -> Self {
         Self {
-            input: Input::new(),
             world: World::new(),
+            input: Input::new(),
+            clock: Clock::new(60),
+
             window: Arc::new(window),
         }
     }
 
     pub fn update(&mut self) {
-        if self.input.key_pressed(winit::keyboard::KeyCode::KeyW) {
-            println!("Pressed W");
-        }
-
-        // if self.input.key_held(winit::keyboard::KeyCode::KeyW) {
-        //     println!("Holding W");
-        // }
-
-        if self.input.key_released(winit::keyboard::KeyCode::KeyW) {
-            println!("Released W");
+        for delta_time in self.clock.update() {
+            println!("{}", delta_time);
         }
     }
 
