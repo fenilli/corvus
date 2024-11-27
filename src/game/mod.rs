@@ -1,5 +1,8 @@
-use std::sync::Arc;
+mod components;
+mod systems;
 
+use components::{Position, Rotation, Scale, Transform, Velocity};
+use std::sync::Arc;
 use winit::window::Window;
 
 use crate::{
@@ -7,38 +10,30 @@ use crate::{
     world::World,
 };
 
-#[derive(Debug)]
-struct TransformComponent {
-    position: (f64, f64),
-    rotation: f32,
-    scale: u32,
-}
-
-fn player_movement(world: &World, input: &Input, delta_time: f64) {
+fn player_input_system(world: &World, input: &Input) {
     let player_speed = 100.0;
 
-    for transform in world
-        .get_components_mut::<TransformComponent>()
-        .unwrap()
-        .iter_mut()
-    {
+    for velocity in world.get_components_mut::<Velocity>().unwrap().iter_mut() {
         if input.key_held(winit::keyboard::KeyCode::KeyA) {
-            transform.position.1 -= player_speed * delta_time;
+            velocity.y = -player_speed;
         }
 
         if input.key_held(winit::keyboard::KeyCode::KeyD) {
-            transform.position.1 += player_speed * delta_time;
+            velocity.y = player_speed;
         }
     }
 }
 
-fn print_position(world: &World) {
-    for transform in world
-        .get_components_mut::<TransformComponent>()
-        .unwrap()
-        .iter_mut()
-    {
-        println!("x: {} y: {}", transform.position.0, transform.position.1);
+fn movement_system(world: &World, delta_time: f32) {
+    let velocities = world.get_components::<Velocity>().unwrap();
+    let mut transforms = world.get_components_mut::<Transform>().unwrap();
+
+    let iter = velocities.iter().zip(transforms.iter_mut());
+
+    for (velocity, transform) in iter {
+        transform.position.y += velocity.y * delta_time;
+
+        println!("x: {} y: {}", transform.position.x, transform.position.y);
     }
 }
 
@@ -53,17 +48,19 @@ pub struct Game {
 impl Game {
     pub fn new(window: Window) -> Self {
         let mut world = World::new();
-        world.register_component::<TransformComponent>();
+        world.register_component::<Velocity>();
+        world.register_component::<Transform>();
 
         let player = world.create_entity();
         world.set_component(
             player,
-            TransformComponent {
-                position: (100.0, 100.0),
-                rotation: 0.0,
-                scale: 1,
-            },
+            Transform::new(
+                Position::new(100.0, 100.0),
+                Rotation::new(0.0),
+                Scale::new(0.0),
+            ),
         );
+        world.set_component(player, Velocity::new(0.0, 0.0));
 
         Self {
             world,
@@ -75,11 +72,11 @@ impl Game {
     }
 
     pub fn update(&mut self) {
-        for delta_time in self.clock.update() {
-            player_movement(&self.world, &self.input, delta_time);
-        }
+        player_input_system(&self.world, &self.input);
 
-        print_position(&self.world);
+        for delta_time in self.clock.update() {
+            movement_system(&self.world, delta_time);
+        }
     }
 
     pub fn input(&mut self) -> &mut Input {

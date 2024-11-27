@@ -30,12 +30,12 @@ pub struct ClockIterator<'a> {
 }
 
 impl<'a> Iterator for ClockIterator<'a> {
-    type Item = f64;
+    type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.clock.accumulated_time >= self.clock.frame_duration {
             self.clock.accumulated_time -= self.clock.frame_duration;
-            return Some(self.clock.frame_duration.as_secs_f64());
+            return Some(self.clock.frame_duration.as_secs_f32());
         }
 
         None
