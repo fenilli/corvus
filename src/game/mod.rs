@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use winit::window::Window;
 
-use crate::{clock::Clock, input::Input, world::World};
+use crate::{
+    resources::{Clock, Input},
+    world::World,
+};
 
 #[derive(Debug)]
 struct TransformComponent {

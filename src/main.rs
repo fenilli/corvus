@@ -1,6 +1,5 @@
-mod clock;
 mod game;
-mod input;
+mod resources;
 mod world;
 
 use std::{thread::sleep, time::Duration};
