@@ -6,7 +6,8 @@ use std::sync::Arc;
 use winit::window::Window;
 
 use crate::{
-    resources::{Clock, Input},
+    renderer::{Material, Mesh, Texture},
+    resources::{Cache, Clock, Input},
     world::World,
 };
 
@@ -38,9 +39,13 @@ fn movement_system(world: &World, delta_time: f32) {
 }
 
 pub struct Game {
-    world: World,
     input: Input,
     clock: Clock,
+    mesh_caches: Cache<Mesh>,
+    material_caches: Cache<Material>,
+    texture_caches: Cache<Texture>,
+
+    world: World,
 
     window: Arc<Window>,
 }
@@ -63,9 +68,13 @@ impl Game {
         world.set_component(player, Velocity::new(0.0, 0.0));
 
         Self {
-            world,
             input: Input::new(),
             clock: Clock::new(60),
+            mesh_caches: Cache::new(),
+            material_caches: Cache::new(),
+            texture_caches: Cache::new(),
+
+            world,
 
             window: Arc::new(window),
         }

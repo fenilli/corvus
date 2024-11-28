@@ -1,4 +1,5 @@
 mod game;
+mod renderer;
 mod resources;
 mod world;
 
