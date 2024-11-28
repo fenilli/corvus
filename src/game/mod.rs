@@ -1,8 +1,9 @@
 mod components;
 mod systems;
 
+use components::Quad;
+use systems::quad_system;
 // use components::{Position, Rotation, Scale, Transform, Velocity};
-use std::sync::Arc;
 use winit::window::Window;
 
 use crate::{
@@ -44,44 +45,46 @@ pub struct Game {
     renderer: Renderer,
 
     world: World,
-
-    window: Arc<Window>,
 }
 
 impl Game {
     pub fn new(window: Window) -> Self {
-        let world = World::new();
-        // world.register_component::<Velocity>();
+        let mut world = World::new();
+        world.register_component::<Quad>();
         // world.register_component::<Transform>();
 
-        // let player = world.create_entity();
-        // world.set_component(
-        //     player,
-        //     Transform::new(
-        //         Position::new(100.0, 100.0),
-        //         Rotation::new(0.0),
-        //         Scale::new(0.0),
-        //     ),
-        // );
+        let player = world.create_entity();
+        world.set_component(
+            player,
+            Quad {
+                height: 100,
+                width: 100,
+            }, // Transform::new(
+               //     Position::new(100.0, 100.0),
+               //     Rotation::new(0.0),
+               //     Scale::new(0.0),
+               // ),
+        );
         // world.set_component(player, Velocity::new(0.0, 0.0));
 
         Self {
             input: Input::new(),
             clock: Clock::new(60),
-            renderer: Renderer::new(),
 
             world,
 
-            window: Arc::new(window),
+            renderer: Renderer::new(window),
         }
     }
 
     pub fn update(&mut self) {
-        // player_input_system(&self.world, &self.input);
+        quad_system(&self.world, &mut self.renderer);
 
         for _delta_time in self.clock.update() {
             // movement_system(&self.world, delta_time);
         }
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
     }
 
     pub fn input(&mut self) -> &mut Input {
@@ -89,6 +92,6 @@ impl Game {
     }
 
     pub fn window(&self) -> &Window {
-        &self.window
+        &self.renderer.window()
     }
 }

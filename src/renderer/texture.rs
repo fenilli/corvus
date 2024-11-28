@@ -5,8 +5,8 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn new(path: &'static str, device: &wgpu::Device) -> Self {
-        let image = image::open(path).unwrap().to_rgb8();
+    pub fn new(path: String, device: &wgpu::Device) -> Self {
+        let image = image::open(path.as_str()).unwrap().to_rgb8();
         let dimensions = image.dimensions();
 
         let texture = device.create_texture(&wgpu::TextureDescriptor {

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 pub struct Cache<T> {
-    items: HashMap<&'static str, T>,
+    items: HashMap<String, T>,
 }
 
 impl<T: 'static> Cache<T> {
@@ -11,13 +11,17 @@ impl<T: 'static> Cache<T> {
         }
     }
 
-    pub fn insert(&mut self, key: &'static str, item: T) -> &'static str {
-        self.items.entry(key).or_insert(item);
+    pub fn insert(&mut self, key: String, item: T) -> String {
+        self.items.entry(key.clone()).or_insert(item);
 
         key
     }
 
-    pub fn get(&self, key: &'static str) -> Option<&T> {
-        self.items.get(key)
+    pub fn exists(&self, key: &String) -> bool {
+        self.items.contains_key(key)
+    }
+
+    pub fn get(&self, key: String) -> Option<&T> {
+        self.items.get(&key)
     }
 }
