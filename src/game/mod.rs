@@ -1,49 +1,47 @@
 mod components;
 mod systems;
 
-use components::{Position, Rotation, Scale, Transform, Velocity};
+// use components::{Position, Rotation, Scale, Transform, Velocity};
 use std::sync::Arc;
 use winit::window::Window;
 
 use crate::{
-    renderer::{Material, Mesh, Texture},
-    resources::{Cache, Clock, Input},
+    renderer::Renderer,
+    resources::{Clock, Input},
     world::World,
 };
 
-fn player_input_system(world: &World, input: &Input) {
-    let player_speed = 100.0;
+// fn player_input_system(world: &World, input: &Input) {
+//     let player_speed = 100.0;
 
-    for velocity in world.get_components_mut::<Velocity>().unwrap().iter_mut() {
-        if input.key_held(winit::keyboard::KeyCode::KeyA) {
-            velocity.y = -player_speed;
-        }
+//     for velocity in world.get_components_mut::<Velocity>().unwrap().iter_mut() {
+//         if input.key_held(winit::keyboard::KeyCode::KeyA) {
+//             velocity.y = -player_speed;
+//         }
 
-        if input.key_held(winit::keyboard::KeyCode::KeyD) {
-            velocity.y = player_speed;
-        }
-    }
-}
+//         if input.key_held(winit::keyboard::KeyCode::KeyD) {
+//             velocity.y = player_speed;
+//         }
+//     }
+// }
 
-fn movement_system(world: &World, delta_time: f32) {
-    let velocities = world.get_components::<Velocity>().unwrap();
-    let mut transforms = world.get_components_mut::<Transform>().unwrap();
+// fn movement_system(world: &World, delta_time: f32) {
+//     let velocities = world.get_components::<Velocity>().unwrap();
+//     let mut transforms = world.get_components_mut::<Transform>().unwrap();
 
-    let iter = velocities.iter().zip(transforms.iter_mut());
+//     let iter = velocities.iter().zip(transforms.iter_mut());
 
-    for (velocity, transform) in iter {
-        transform.position.y += velocity.y * delta_time;
+//     for (velocity, transform) in iter {
+//         transform.position.y += velocity.y * delta_time;
 
-        println!("x: {} y: {}", transform.position.x, transform.position.y);
-    }
-}
+//         println!("x: {} y: {}", transform.position.x, transform.position.y);
+//     }
+// }
 
 pub struct Game {
     input: Input,
     clock: Clock,
-    mesh_caches: Cache<Mesh>,
-    material_caches: Cache<Material>,
-    texture_caches: Cache<Texture>,
+    renderer: Renderer,
 
     world: World,
 
@@ -52,27 +50,25 @@ pub struct Game {
 
 impl Game {
     pub fn new(window: Window) -> Self {
-        let mut world = World::new();
-        world.register_component::<Velocity>();
-        world.register_component::<Transform>();
+        let world = World::new();
+        // world.register_component::<Velocity>();
+        // world.register_component::<Transform>();
 
-        let player = world.create_entity();
-        world.set_component(
-            player,
-            Transform::new(
-                Position::new(100.0, 100.0),
-                Rotation::new(0.0),
-                Scale::new(0.0),
-            ),
-        );
-        world.set_component(player, Velocity::new(0.0, 0.0));
+        // let player = world.create_entity();
+        // world.set_component(
+        //     player,
+        //     Transform::new(
+        //         Position::new(100.0, 100.0),
+        //         Rotation::new(0.0),
+        //         Scale::new(0.0),
+        //     ),
+        // );
+        // world.set_component(player, Velocity::new(0.0, 0.0));
 
         Self {
             input: Input::new(),
             clock: Clock::new(60),
-            mesh_caches: Cache::new(),
-            material_caches: Cache::new(),
-            texture_caches: Cache::new(),
+            renderer: Renderer::new(),
 
             world,
 
@@ -81,10 +77,10 @@ impl Game {
     }
 
     pub fn update(&mut self) {
-        player_input_system(&self.world, &self.input);
+        // player_input_system(&self.world, &self.input);
 
-        for delta_time in self.clock.update() {
-            movement_system(&self.world, delta_time);
+        for _delta_time in self.clock.update() {
+            // movement_system(&self.world, delta_time);
         }
     }
 

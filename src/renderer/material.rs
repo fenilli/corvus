@@ -1,13 +1,15 @@
-use wgpu::{BindGroup, BindGroupLayout, Device};
-
 use super::texture::Texture;
 
 pub struct Material {
-    pub bind_group: BindGroup,
+    pub bind_group: wgpu::BindGroup,
 }
 
 impl Material {
-    pub fn new(device: &Device, texture: &Texture, bind_group_layout: &BindGroupLayout) -> Self {
+    pub fn new(
+        texture: &Texture,
+        device: &wgpu::Device,
+        bind_group_layout: &wgpu::BindGroupLayout,
+    ) -> Self {
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Material Bind Group"),
             layout: bind_group_layout,

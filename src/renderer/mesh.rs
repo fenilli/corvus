@@ -1,15 +1,15 @@
-use wgpu::{util::DeviceExt, Buffer, Device};
+use wgpu::util::DeviceExt;
 
 use super::vertex::Vertex;
 
 pub struct Mesh {
-    pub vertex_buffer: Buffer,
-    pub index_buffer: Buffer,
+    pub vertex_buffer: wgpu::Buffer,
+    pub index_buffer: wgpu::Buffer,
     pub index_count: u32,
 }
 
 impl Mesh {
-    pub fn new(device: &Device, vertices: &[Vertex], indices: &[u32]) -> Self {
+    pub fn new(vertices: &[Vertex], indices: &[u32], device: &wgpu::Device) -> Self {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Mesh Vertex Buffer"),
             contents: bytemuck::cast_slice(vertices),
