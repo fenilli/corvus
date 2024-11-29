@@ -1,6 +1,7 @@
 mod components;
 mod systems;
 
+use crate::world::JoinIterators;
 use components::Quad;
 use components::{Position, Rotation, Scale, Transform, Velocity};
 use systems::quad_system;
@@ -29,17 +30,20 @@ fn player_input_system(world: &World, input: &Input) {
 }
 
 fn movement_system(world: &World, delta_time: f32) {
-    let velocities = world.iter_components::<Velocity>().unwrap();
-    let transforms = world.iter_components_mut::<Transform>().unwrap();
+    let velocities = world.iter_components::<Velocity>();
+    let transforms = world.iter_components_mut::<Transform>();
 
-    let iter = velocities
-        .zip(transforms)
-        .filter_map(|((entity, velocity), (_, transform))| Some((entity, velocity, transform)));
+    let Some(iter) = velocities.join(transforms) else {
+        return;
+    };
 
-    for (_, velocity, mut transform) in iter {
+    for (entity, (velocity, mut transform)) in iter {
         transform.position.y += velocity.y * delta_time;
 
-        println!("x: {} y: {}", transform.position.x, transform.position.y);
+        println!(
+            "for entity: {:?} -> x: {} y: {}",
+            entity, transform.position.x, transform.position.y
+        );
     }
 }
 

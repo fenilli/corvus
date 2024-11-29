@@ -60,3 +60,33 @@ impl World {
         self.component_manager.iter_mut::<T>()
     }
 }
+
+pub trait JoinIterators<'a, A, B> {
+    fn join(
+        self,
+        other: Option<impl Iterator<Item = (Entity, B)> + 'a>,
+    ) -> Option<impl Iterator<Item = (Entity, (A, B))> + 'a>;
+}
+
+impl<'a, A, B, I> JoinIterators<'a, A, B> for Option<I>
+where
+    I: Iterator<Item = (Entity, A)> + 'a,
+{
+    fn join(
+        self,
+        other: Option<impl Iterator<Item = (Entity, B)> + 'a>,
+    ) -> Option<impl Iterator<Item = (Entity, (A, B))> + 'a> {
+        match (self, other) {
+            (Some(iter_a), Some(iter_b)) => {
+                Some(iter_a.zip(iter_b).filter_map(|((e_a, a), (e_b, b))| {
+                    if e_a == e_b {
+                        Some((e_a, (a, b)))
+                    } else {
+                        None
+                    }
+                }))
+            }
+            _ => None,
+        }
+    }
+}
