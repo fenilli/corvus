@@ -16,9 +16,16 @@ use crate::{
 fn player_input_system(world: &World, input: &Input) {
     let player_speed = 100.0;
 
-    let velocities = world.iter_components_mut::<Velocity>().unwrap();
+    let players = world.iter_components::<Player>();
+    let velocities = world.iter_components_mut::<Velocity>();
+    let transforms = world.iter_components_mut::<Transform>();
 
-    for (_, mut velocity) in velocities {
+    let Some(iter) = players.join(velocities).join(transforms) else {
+        return;
+    };
+
+    for (entity, ((player, mut velocity), mut transform)) in iter {
+        println!("{:?} {:?}", entity, player);
         if input.key_held(winit::keyboard::KeyCode::KeyA) {
             velocity.y = -player_speed;
         }
@@ -47,6 +54,9 @@ fn movement_system(world: &World, delta_time: f32) {
     }
 }
 
+#[derive(Debug)]
+struct Player;
+
 pub struct Game {
     input: Input,
     clock: Clock,
@@ -58,11 +68,12 @@ pub struct Game {
 impl Game {
     pub fn new(window: Window) -> Self {
         let mut world = World::new();
-        // world.register_component::<Quad>();
+        world.register_component::<Player>();
         world.register_component::<Transform>();
         world.register_component::<Velocity>();
 
         let player = world.create_entity();
+        world.set_component(player, Player);
         world.set_component(
             player,
             Transform::new(
@@ -72,6 +83,17 @@ impl Game {
             ),
         );
         world.set_component(player, Velocity::new(0.0, 0.0));
+
+        let enemy = world.create_entity();
+        world.set_component(
+            enemy,
+            Transform::new(
+                Position::new(100.0, 100.0),
+                Rotation::new(0.0),
+                Scale::new(0.0),
+            ),
+        );
+        world.set_component(enemy, Velocity::new(0.0, 0.0));
 
         Self {
             input: Input::new(),
@@ -84,10 +106,10 @@ impl Game {
     }
 
     pub fn update(&mut self) {
-        player_input_system(&self.world, &self.input);
         // quad_system(&self.world, &mut self.renderer);
 
         for delta_time in self.clock.update() {
+            player_input_system(&self.world, &self.input);
             movement_system(&self.world, delta_time);
         }
 

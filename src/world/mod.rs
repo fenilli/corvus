@@ -76,17 +76,13 @@ where
         self,
         other: Option<impl Iterator<Item = (Entity, B)> + 'a>,
     ) -> Option<impl Iterator<Item = (Entity, (A, B))> + 'a> {
-        match (self, other) {
-            (Some(iter_a), Some(iter_b)) => {
-                Some(iter_a.zip(iter_b).filter_map(|((e_a, a), (e_b, b))| {
-                    if e_a == e_b {
-                        Some((e_a, (a, b)))
-                    } else {
-                        None
-                    }
-                }))
-            }
-            _ => None,
-        }
+        let Some(iter_a) = self else { return None };
+
+        let Some(iter_b) = other else {
+            return None;
+        };
+
+        let zip = iter_a.zip(iter_b);
+        Some(zip.filter_map(|((e_a, a), (_, b))| Some((e_a, (a, b)))))
     }
 }
