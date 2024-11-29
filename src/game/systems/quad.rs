@@ -6,7 +6,6 @@ use crate::{
 
 pub fn quad_system(world: &World, renderer: &mut Renderer) {
     let quads = world.iter_components::<Quad>().unwrap();
-    let iter = quads.iter();
 
     let vertices = &[
         Vertex {
@@ -28,13 +27,13 @@ pub fn quad_system(world: &World, renderer: &mut Renderer) {
     ];
     let indices = &[0, 1, 2, 2, 3, 0];
 
-    for quad in iter {
+    for (entity, quad) in quads {
         let handle = renderer.create_mesh(
             format!("quad_{}_{}", quad.height, quad.width),
             vertices,
             indices,
         );
 
-        println!("{}", handle);
+        println!("Entity: {:?}, Handle: {}", entity, handle);
     }
 }

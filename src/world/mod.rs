@@ -34,19 +34,29 @@ impl World {
         self.component_manager.register::<T>();
     }
 
-    pub fn set_component<T: 'static>(&self, entity: Entity, component: T) {
+    pub fn set_component<T: 'static>(&mut self, entity: Entity, component: T) {
         if !self.entity_pool.is_valid(entity) {
             return;
         }
 
-        self.component_manager.insert(entity, component);
+        self.component_manager.insert::<T>(entity, component);
     }
 
-    pub fn iter_components<T: 'static>(&self) -> Option<Ref<Vec<T>>> {
+    pub fn remove_component<T: 'static>(&mut self, entity: Entity) {
+        if !self.entity_pool.is_valid(entity) {
+            return;
+        }
+
+        self.component_manager.remove::<T>(entity);
+    }
+
+    pub fn iter_components<T: 'static>(&self) -> Option<impl Iterator<Item = (Entity, Ref<T>)>> {
         self.component_manager.iter::<T>()
     }
 
-    pub fn iter_components_mut<T: 'static>(&self) -> Option<RefMut<Vec<T>>> {
+    pub fn iter_components_mut<T: 'static>(
+        &self,
+    ) -> Option<impl Iterator<Item = (Entity, RefMut<T>)>> {
         self.component_manager.iter_mut::<T>()
     }
 }
