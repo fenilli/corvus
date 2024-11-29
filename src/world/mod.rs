@@ -1,5 +1,6 @@
 mod component_manager;
 mod entity_pool;
+mod sparse_set;
 
 use std::cell::{Ref, RefMut};
 
@@ -23,13 +24,9 @@ impl World {
         self.entity_pool.allocate()
     }
 
-    pub fn destroy_entity(&mut self, entity: Entity) -> bool {
+    pub fn destroy_entity(&mut self, entity: Entity) {
         if self.entity_pool.deallocate(entity) {
-            self.component_manager.clean(entity.id());
-
-            true
-        } else {
-            false
+            self.component_manager.clear(entity);
         }
     }
 
@@ -42,14 +39,14 @@ impl World {
             return;
         }
 
-        self.component_manager.insert(entity.id(), component);
+        self.component_manager.insert(entity, component);
     }
 
-    pub fn get_components<T: 'static>(&self) -> Option<Ref<Vec<T>>> {
-        self.component_manager.get_all::<T>()
+    pub fn iter_components<T: 'static>(&self) -> Option<Ref<Vec<T>>> {
+        self.component_manager.iter::<T>()
     }
 
-    pub fn get_components_mut<T: 'static>(&self) -> Option<RefMut<Vec<T>>> {
-        self.component_manager.get_all_mut::<T>()
+    pub fn iter_components_mut<T: 'static>(&self) -> Option<RefMut<Vec<T>>> {
+        self.component_manager.iter_mut::<T>()
     }
 }

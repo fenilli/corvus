@@ -5,7 +5,7 @@ use crate::{
 };
 
 pub fn quad_system(world: &World, renderer: &mut Renderer) {
-    let quads = world.get_components::<Quad>().unwrap();
+    let quads = world.iter_components::<Quad>().unwrap();
     let iter = quads.iter();
 
     let vertices = &[
