@@ -61,9 +61,6 @@ impl Game {
         let player = world.create_entity();
         world.set_component(
             player,
-            // Quad {
-            //     height: 100,
-            //     width: 100, }
             Transform::new(
                 Position::new(100.0, 100.0),
                 Rotation::new(0.0),
@@ -90,7 +87,7 @@ impl Game {
             movement_system(&self.world, delta_time);
         }
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        // std::thread::sleep(std::time::Duration::from_secs(1));
     }
 
     pub fn input(&mut self) -> &mut Input {
