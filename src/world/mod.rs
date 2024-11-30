@@ -1,32 +1,32 @@
 mod component_manager;
-mod entity_pool;
+mod index_allocator;
 mod sparse_set;
 
 use std::cell::{Ref, RefMut};
 
 use component_manager::ComponentManager;
-use entity_pool::{Entity, EntityPool};
+use index_allocator::{Index, IndexAllocator};
 
 pub struct World {
-    entity_pool: EntityPool,
+    index_allocator: IndexAllocator,
     component_manager: ComponentManager,
 }
 
 impl World {
     pub fn new() -> Self {
         Self {
-            entity_pool: EntityPool::new(),
+            index_allocator: IndexAllocator::new(),
             component_manager: ComponentManager::new(),
         }
     }
 
-    pub fn create_entity(&mut self) -> Entity {
-        self.entity_pool.allocate()
+    pub fn create_entity(&mut self) -> Index {
+        self.index_allocator.allocate()
     }
 
-    pub fn destroy_entity(&mut self, entity: Entity) {
-        if self.entity_pool.deallocate(entity) {
-            self.component_manager.clear(entity);
+    pub fn destroy_entity(&mut self, index: Index) {
+        if self.index_allocator.deallocate(index) {
+            self.component_manager.clear(index);
         }
     }
 
@@ -34,29 +34,29 @@ impl World {
         self.component_manager.register::<T>();
     }
 
-    pub fn set_component<T: 'static>(&mut self, entity: Entity, component: T) {
-        if !self.entity_pool.is_valid(entity) {
+    pub fn set_component<T: 'static>(&mut self, index: Index, component: T) {
+        if !self.index_allocator.is_valid(index) {
             return;
         }
 
-        self.component_manager.insert::<T>(entity, component);
+        self.component_manager.insert::<T>(index, component);
     }
 
-    pub fn remove_component<T: 'static>(&mut self, entity: Entity) {
-        if !self.entity_pool.is_valid(entity) {
+    pub fn remove_component<T: 'static>(&mut self, index: Index) {
+        if !self.index_allocator.is_valid(index) {
             return;
         }
 
-        self.component_manager.remove::<T>(entity);
+        self.component_manager.remove::<T>(index);
     }
 
-    pub fn iter_components<T: 'static>(&self) -> Option<impl Iterator<Item = (Entity, Ref<T>)>> {
+    pub fn iter_components<T: 'static>(&self) -> Option<impl Iterator<Item = (Index, Ref<T>)>> {
         self.component_manager.iter::<T>()
     }
 
     pub fn iter_components_mut<T: 'static>(
         &self,
-    ) -> Option<impl Iterator<Item = (Entity, RefMut<T>)>> {
+    ) -> Option<impl Iterator<Item = (Index, RefMut<T>)>> {
         self.component_manager.iter_mut::<T>()
     }
 }
@@ -64,18 +64,18 @@ impl World {
 pub trait JoinIterators<'a, A, B> {
     fn join(
         self,
-        other: Option<impl Iterator<Item = (Entity, B)> + 'a>,
-    ) -> Option<impl Iterator<Item = (Entity, (A, B))> + 'a>;
+        other: Option<impl Iterator<Item = (Index, B)> + 'a>,
+    ) -> Option<impl Iterator<Item = (Index, (A, B))> + 'a>;
 }
 
 impl<'a, A, B, I> JoinIterators<'a, A, B> for Option<I>
 where
-    I: Iterator<Item = (Entity, A)> + 'a,
+    I: Iterator<Item = (Index, A)> + 'a,
 {
     fn join(
         self,
-        other: Option<impl Iterator<Item = (Entity, B)> + 'a>,
-    ) -> Option<impl Iterator<Item = (Entity, (A, B))> + 'a> {
+        other: Option<impl Iterator<Item = (Index, B)> + 'a>,
+    ) -> Option<impl Iterator<Item = (Index, (A, B))> + 'a> {
         let Some(iter_a) = self else { return None };
 
         let Some(iter_b) = other else {

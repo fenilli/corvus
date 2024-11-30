@@ -3,12 +3,12 @@ use std::{
     collections::HashMap,
 };
 
-use super::entity_pool::Entity;
+use super::index_allocator::Index;
 
 pub struct SparseSet<T> {
     data: RefCell<Vec<T>>,
-    dense: Vec<Entity>,
-    sparse: HashMap<Entity, usize>,
+    dense: Vec<Index>,
+    sparse: HashMap<Index, usize>,
 }
 
 impl<T: 'static> SparseSet<T> {
@@ -20,22 +20,22 @@ impl<T: 'static> SparseSet<T> {
         }
     }
 
-    pub fn insert(&mut self, entity: Entity, data: T) {
+    pub fn insert(&mut self, index: Index, data: T) {
         let mut storage = self.data.borrow_mut();
 
-        if let Some(&dense_idx) = self.sparse.get(&entity) {
+        if let Some(&dense_idx) = self.sparse.get(&index) {
             storage[dense_idx] = data;
         } else {
-            self.sparse.insert(entity, self.dense.len());
-            self.dense.push(entity);
+            self.sparse.insert(index, self.dense.len());
+            self.dense.push(index);
             storage.push(data);
         }
     }
 
-    pub fn remove(&mut self, entity: Entity) {
+    pub fn remove(&mut self, index: Index) {
         let mut storage = self.data.borrow_mut();
 
-        if let Some(&dense_idx) = self.sparse.get(&entity) {
+        if let Some(&dense_idx) = self.sparse.get(&index) {
             let last_idx = self.dense.len() - 1;
 
             if dense_idx != last_idx {
@@ -47,41 +47,23 @@ impl<T: 'static> SparseSet<T> {
 
             self.dense.pop();
             storage.pop();
-            self.sparse.remove(&entity);
+            self.sparse.remove(&index);
         }
     }
 
-    pub fn get(&self, entity: Entity) -> Option<Ref<T>> {
-        Ref::filter_map(self.data.borrow(), |storage| {
-            self.sparse
-                .get(&entity)
-                .and_then(|&dense_idx| storage.get(dense_idx))
-        })
-        .ok()
-    }
-
-    pub fn get_mut(&mut self, entity: Entity) -> Option<RefMut<T>> {
-        RefMut::filter_map(self.data.borrow_mut(), |storage| {
-            self.sparse
-                .get(&entity)
-                .and_then(|&dense_idx| storage.get_mut(dense_idx))
-        })
-        .ok()
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = (Entity, Ref<T>)> {
-        self.dense.iter().enumerate().map(|(dense_index, &entity)| {
+    pub fn iter(&self) -> impl Iterator<Item = (Index, Ref<T>)> {
+        self.dense.iter().enumerate().map(|(dense_index, &index)| {
             (
-                entity,
+                index,
                 Ref::map(self.data.borrow(), |data| &data[dense_index]),
             )
         })
     }
 
-    pub fn iter_mut(&self) -> impl Iterator<Item = (Entity, RefMut<T>)> {
-        self.dense.iter().enumerate().map(|(dense_index, &entity)| {
+    pub fn iter_mut(&self) -> impl Iterator<Item = (Index, RefMut<T>)> {
+        self.dense.iter().enumerate().map(|(dense_index, &index)| {
             (
-                entity,
+                index,
                 RefMut::map(self.data.borrow_mut(), |data| &mut data[dense_index]),
             )
         })
