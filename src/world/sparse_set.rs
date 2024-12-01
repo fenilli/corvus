@@ -1,6 +1,7 @@
 use std::{
     cell::{Ref, RefCell, RefMut},
     collections::HashMap,
+    fmt::Debug,
 };
 
 use super::index_allocator::Index;
@@ -9,6 +10,18 @@ pub struct SparseSet<T> {
     data: RefCell<Vec<T>>,
     dense: Vec<Index>,
     sparse: HashMap<Index, usize>,
+}
+
+impl<T: Debug> Debug for SparseSet<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let data = self.data.borrow();
+
+        f.debug_struct("SparseSet")
+            .field("data", &*data)
+            .field("dense", &self.dense)
+            .field("sparse", &self.sparse)
+            .finish()
+    }
 }
 
 impl<T: 'static> SparseSet<T> {

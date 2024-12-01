@@ -4,11 +4,22 @@ pub struct Index {
     pub(super) generation: u32,
 }
 
+impl std::fmt::Display for Index {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Index")
+            .field("id", &self.id)
+            .field("generation", &self.generation)
+            .finish()
+    }
+}
+
+#[derive(Debug)]
 enum AllocatorEntry {
     Free,
     Occupied(u32),
 }
 
+#[derive(Debug)]
 pub struct IndexAllocator {
     entries: Vec<AllocatorEntry>,
     free_list: Vec<usize>,
