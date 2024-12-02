@@ -15,7 +15,7 @@ impl std::fmt::Display for Index {
 
 #[derive(Debug)]
 enum AllocatorEntry {
-    Free,
+    Free(u32),
     Occupied(u32),
 }
 
@@ -40,15 +40,19 @@ impl IndexAllocator {
             return Index { id, generation: 0 };
         };
 
-        if let AllocatorEntry::Occupied(generation) = self.entries[id] {
-            Index { id, generation }
-        } else {
-            panic!("Tried to reference a non-occupied entry from the free list!")
+        match self.entries[id] {
+            AllocatorEntry::Occupied(_) => {
+                panic!("Trying to allocate an already occupied index!");
+            }
+            AllocatorEntry::Free(generation) => {
+                self.entries[id] = AllocatorEntry::Occupied(generation);
+                Index { id, generation }
+            }
         }
     }
 
     pub fn deallocate(&mut self, index: Index) -> bool {
-        let Some(entry) = self.entries.get_mut(index.id) else {
+        let Some(entry) = self.entries.get(index.id) else {
             return false;
         };
 
@@ -56,8 +60,7 @@ impl IndexAllocator {
             return false;
         };
 
-        *generation += 1;
-        *entry = AllocatorEntry::Free;
+        self.entries[index.id] = AllocatorEntry::Free(generation + 1);
         self.free_list.push(index.id);
 
         true
