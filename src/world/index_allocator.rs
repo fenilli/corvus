@@ -4,72 +4,70 @@ pub struct Index {
     pub(super) generation: u32,
 }
 
-impl std::fmt::Display for Index {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Index")
-            .field("id", &self.id)
-            .field("generation", &self.generation)
-            .finish()
-    }
-}
-
 #[derive(Debug)]
 enum AllocatorEntry {
-    Free(u32),
-    Occupied(u32),
+    Free(usize),
+    Occupied,
 }
 
 #[derive(Debug)]
 pub struct IndexAllocator {
-    entries: Vec<AllocatorEntry>,
-    free_list: Vec<usize>,
+    entries: Vec<(AllocatorEntry, u32)>,
+    free_head: usize,
 }
 
 impl IndexAllocator {
     pub fn new() -> Self {
         Self {
             entries: Vec::new(),
-            free_list: Vec::new(),
+            free_head: 0,
         }
     }
 
     pub fn allocate(&mut self) -> Index {
-        let Some(id) = self.free_list.pop() else {
-            let id = self.entries.len();
-            self.entries.push(AllocatorEntry::Occupied(0));
-            return Index { id, generation: 0 };
-        };
+        match self.entries.get_mut(self.free_head) {
+            // Already used Entry
+            Some(entry) => match entry.0 {
+                AllocatorEntry::Free(next_free) => {
+                    let index = Index {
+                        id: self.free_head,
+                        generation: entry.1,
+                    };
+                    self.free_head = next_free;
+                    *entry = (AllocatorEntry::Occupied, entry.1);
 
-        match self.entries[id] {
-            AllocatorEntry::Occupied(_) => {
-                panic!("Trying to allocate an already occupied index!");
-            }
-            AllocatorEntry::Free(generation) => {
-                self.entries[id] = AllocatorEntry::Occupied(generation);
+                    index
+                }
+                AllocatorEntry::Occupied => {
+                    panic!("Trying to allocate an already occupied index")
+                }
+            },
+            // New Entry
+            None => {
+                let generation = 0;
+                let id = self.entries.len();
+                self.entries.push((AllocatorEntry::Occupied, generation));
+                self.free_head = id + 1;
                 Index { id, generation }
             }
         }
     }
 
     pub fn deallocate(&mut self, index: Index) -> bool {
-        let Some(entry) = self.entries.get(index.id) else {
-            return false;
-        };
+        let entry = &mut self.entries[index.id];
 
-        let AllocatorEntry::Occupied(generation) = entry else {
-            return false;
-        };
+        match entry.0 {
+            AllocatorEntry::Occupied => {
+                if entry.1 != index.generation {
+                    return false;
+                }
 
-        self.entries[index.id] = AllocatorEntry::Free(generation + 1);
-        self.free_list.push(index.id);
+                *entry = (AllocatorEntry::Free(self.free_head), entry.1 + 1);
+                self.free_head = index.id;
 
-        true
-    }
-
-    pub fn is_valid(&self, index: Index) -> bool {
-        matches!(
-            self.entries.get(index.id),
-            Some(AllocatorEntry::Occupied(generation)) if *generation == index.generation
-        )
+                true
+            }
+            AllocatorEntry::Free(_) => false,
+        }
     }
 }
