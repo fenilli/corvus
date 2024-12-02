@@ -4,7 +4,7 @@ use std::{
     fmt::Debug,
 };
 
-use super::index_allocator::Index;
+use super::{index_allocator::Index, world::Component};
 
 pub struct SparseSet<T> {
     data: RefCell<Vec<T>>,
@@ -14,10 +14,8 @@ pub struct SparseSet<T> {
 
 impl<T: Debug> Debug for SparseSet<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let data = self.data.borrow();
-
         f.debug_struct("SparseSet")
-            .field("data", &*data)
+            .field("data", &self.data.borrow())
             .field("dense", &self.dense)
             .field("sparse", &self.sparse)
             .finish()
@@ -80,5 +78,26 @@ impl<T: 'static> SparseSet<T> {
                 RefMut::map(self.data.borrow_mut(), |data| &mut data[dense_index]),
             )
         })
+    }
+}
+
+pub trait AnySparseSet: Debug {
+    fn as_any(&self) -> &dyn std::any::Any;
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
+
+    fn remove(&mut self, index: Index);
+}
+
+impl<T: Component> AnySparseSet for SparseSet<T> {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+
+    fn remove(&mut self, index: Index) {
+        self.remove(index);
     }
 }

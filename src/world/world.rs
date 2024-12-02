@@ -2,7 +2,7 @@ use std::{any::TypeId, collections::HashMap, fmt::Debug};
 
 use super::{
     index_allocator::{Index, IndexAllocator},
-    sparse_set::SparseSet,
+    sparse_set::{AnySparseSet, SparseSet},
 };
 
 pub type Entity = Index;
@@ -12,7 +12,7 @@ impl<T: Debug + Send + Sync + 'static> Component for T {}
 
 pub struct World {
     index_allocator: IndexAllocator,
-    components: HashMap<TypeId, SparseSet<Box<dyn Component>>>,
+    components: HashMap<TypeId, Box<dyn AnySparseSet>>,
 }
 
 impl Debug for World {
@@ -42,7 +42,8 @@ impl World {
             );
         }
 
-        self.components.insert(type_id, SparseSet::new());
+        self.components
+            .insert(type_id, Box::new(SparseSet::<T>::new()));
     }
 
     pub fn unregister_component<T: Component>(&mut self) {
@@ -67,8 +68,8 @@ impl World {
             return;
         };
 
-        for (_, component_set) in self.components.iter_mut() {
-            component_set.remove(entity);
+        for (_, any_sparse_set) in self.components.iter_mut() {
+            any_sparse_set.remove(entity);
         }
     }
 
@@ -77,14 +78,21 @@ impl World {
             panic!("Trying to add a component to an invalid entity")
         }
 
-        let Some(component_set) = self.components.get_mut(&TypeId::of::<T>()) else {
+        let Some(any_sparse_set) = self.components.get_mut(&TypeId::of::<T>()) else {
             panic!(
                 "Component {} is not registered!",
                 std::any::type_name::<T>()
             )
         };
 
-        component_set.insert(entity, Box::new(component));
+        let Some(sparse_set) = any_sparse_set.as_any_mut().downcast_mut::<SparseSet<T>>() else {
+            panic!(
+                "Component {} could not be downcasted!",
+                std::any::type_name::<T>()
+            )
+        };
+
+        sparse_set.insert(entity, component);
     }
 
     pub fn remove_component<T: Component>(&mut self, entity: Entity) {
