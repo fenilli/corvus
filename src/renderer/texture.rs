@@ -1,3 +1,5 @@
+use std::env;
+
 pub struct Texture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
@@ -6,7 +8,9 @@ pub struct Texture {
 
 impl Texture {
     pub fn new(path: String, device: &wgpu::Device) -> Self {
-        let image = image::open(path.as_str()).unwrap().to_rgb8();
+        let image = image::open(format!("src/assets/{}", path))
+            .unwrap()
+            .to_rgb8();
         let dimensions = image.dimensions();
 
         let texture = device.create_texture(&wgpu::TextureDescriptor {

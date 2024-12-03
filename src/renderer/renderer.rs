@@ -13,6 +13,7 @@ pub struct Renderer {
     texture_caches: Cache<Texture>,
     material_caches: Cache<Material>,
 
+    material_bind_group_layout: wgpu::BindGroupLayout,
     window: Arc<Window>,
 }
 
@@ -39,6 +40,29 @@ impl Renderer {
         surface_config.format = wgpu::TextureFormat::Bgra8UnormSrgb;
         surface.configure(&device, &surface_config);
 
+        let material_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("Material Bind Group Layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        count: None,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        count: None,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::NonFiltering),
+                    },
+                ],
+            });
+
         Self {
             device,
             queue,
@@ -47,11 +71,13 @@ impl Renderer {
             texture_caches: Cache::new(),
             material_caches: Cache::new(),
 
+            material_bind_group_layout,
+
             window,
         }
     }
 
-    pub fn load_texture(&mut self, name: String, path: String) -> String {
+    pub fn create_texture(&mut self, name: String, path: String) -> String {
         if self.texture_caches.exists(&path) {
             path
         } else {
@@ -61,16 +87,12 @@ impl Renderer {
         }
     }
 
-    pub fn create_texture(
-        &mut self,
-        name: String,
-        texture: &Texture,
-        bind_group_layout: &wgpu::BindGroupLayout,
-    ) -> String {
+    pub fn create_material(&mut self, name: String, texture_handle: String) -> String {
         if self.material_caches.exists(&name) {
             name
         } else {
-            let material = Material::new(texture, &self.device, bind_group_layout);
+            let texture = self.texture_caches.get(texture_handle).unwrap();
+            let material = Material::new(&texture, &self.device, &self.material_bind_group_layout);
 
             self.material_caches.insert(name, material)
         }
