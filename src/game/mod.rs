@@ -22,13 +22,31 @@ pub struct Game {
 impl Game {
     pub fn new(window: Window) -> Self {
         let mut world = World::new();
-        world.register_component::<Player>();
-        world.register_component::<Enemy>();
+        world.register::<Player>();
+        // world.register_component::<Enemy>();
 
-        let player = world.create_entity();
-        world.set_component(player, Player);
+        let player = world.spawn();
+        world.insert(player, Player);
+
+        world.spawn();
+        world.spawn();
+
+        world.despawn(player);
+
+        let enemy = world.spawn();
+        world.insert(enemy, Player);
+
+        world.spawn();
 
         println!("@Init -> {:?}", world);
+
+        for (entity, player) in world
+            .entities()
+            .zip(world.components::<Player>().unwrap())
+            .filter_map(|(entity, player)| Some((entity, player?)))
+        {
+            println!("@For -> {:?} {:?}", entity, player);
+        }
 
         Self {
             input: Input::new(),
@@ -40,16 +58,14 @@ impl Game {
 
     pub fn update(&mut self) {
         for _delta_time in self.clock.update() {
-            // let mut command_buffer = CommandBuffer::new();
-
-            // command_buffer.schedule(|world| {
-            //     let enemy = world.create_entity();
-            //     world.set_component(enemy, Enemy);
-            // });
-            // command_buffer.execute(&mut self.world);
+            // if let Some(iter) = self.world.iter_components::<Player>() {
+            //     for (entity, player) in iter {
+            //         println!("@Entity: {:?}", entity);
+            //     }
+            // }
         }
 
-        println!("@Update -> {:?}", self.world);
+        // println!("@Update -> {:?}", self.world);
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
 

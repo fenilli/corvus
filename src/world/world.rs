@@ -1,24 +1,27 @@
-use std::{any::TypeId, collections::HashMap, fmt::Debug};
-
-use super::{
-    index_allocator::{Index, IndexAllocator},
-    sparse_set::{AnySparseSet, SparseSet},
+use std::{
+    any::TypeId,
+    cell::{Ref, RefMut},
+    collections::HashMap,
+    fmt::Debug,
 };
 
-pub type Entity = Index;
+use super::{
+    component_vec::{AnyVec, ComponentVec},
+    entity_allocator::{Entity, EntityAllocator},
+};
 
 pub trait Component: Debug + Send + Sync + 'static {}
 impl<T: Debug + Send + Sync + 'static> Component for T {}
 
 pub struct World {
-    index_allocator: IndexAllocator,
-    components: HashMap<TypeId, Box<dyn AnySparseSet>>,
+    entity_allocator: EntityAllocator,
+    components: HashMap<TypeId, Box<dyn AnyVec>>,
 }
 
 impl Debug for World {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("World")
-            .field("index_allocator", &self.index_allocator)
+            .field("entity_allocator", &self.entity_allocator)
             .field("components", &self.components)
             .finish()
     }
@@ -27,12 +30,16 @@ impl Debug for World {
 impl World {
     pub fn new() -> Self {
         Self {
-            index_allocator: IndexAllocator::new(),
+            entity_allocator: EntityAllocator::new(),
             components: HashMap::new(),
         }
     }
 
-    pub fn register_component<T: Component>(&mut self) {
+    pub fn entities(&self) -> impl Iterator<Item = Entity> + '_ {
+        self.entity_allocator.entities()
+    }
+
+    pub fn register<T: Component>(&mut self) {
         let type_id = TypeId::of::<T>();
 
         if self.components.contains_key(&type_id) {
@@ -43,10 +50,10 @@ impl World {
         }
 
         self.components
-            .insert(type_id, Box::new(SparseSet::<T>::new()));
+            .insert(type_id, Box::new(ComponentVec::<T>::new()));
     }
 
-    pub fn unregister_component<T: Component>(&mut self) {
+    pub fn unregister<T: Component>(&mut self) {
         let type_id = TypeId::of::<T>();
 
         if !self.components.contains_key(&type_id) {
@@ -59,54 +66,89 @@ impl World {
         self.components.remove(&type_id);
     }
 
-    pub fn create_entity(&mut self) -> Entity {
-        self.index_allocator.allocate()
+    pub fn spawn(&mut self) -> Entity {
+        let entity = self.entity_allocator.allocate();
+
+        for storage in self.components.values_mut() {
+            storage.default();
+        }
+
+        entity
     }
 
-    pub fn delete_entity(&mut self, entity: Entity) {
-        if !self.index_allocator.deallocate(entity) {
+    pub fn despawn(&mut self, entity: Entity) -> bool {
+        if !self.entity_allocator.deallocate(entity) {
+            return false;
+        };
+
+        for storage in self.components.values_mut() {
+            storage.swap_remove(entity.id);
+        }
+
+        true
+    }
+
+    pub fn insert<T: Component>(&mut self, entity: Entity, component: T) {
+        let Some(index) = self.entity_allocator.find_entity_index(entity) else {
             return;
         };
 
-        for (_, any_sparse_set) in self.components.iter_mut() {
-            any_sparse_set.remove(entity);
-        }
+        let type_id = TypeId::of::<T>();
+
+        let Some(any_vec) = self.components.get_mut(&type_id) else {
+            return;
+        };
+
+        let Some(storage) = any_vec.as_any_mut().downcast_mut::<ComponentVec<T>>() else {
+            return;
+        };
+
+        storage.insert(index, component);
     }
 
-    pub fn set_component<T: Component>(&mut self, entity: Entity, component: T) {
-        if !self.index_allocator.is_valid(entity) {
-            panic!("Trying to add a component to an invalid entity")
-        }
-
-        let Some(any_sparse_set) = self.components.get_mut(&TypeId::of::<T>()) else {
-            panic!(
-                "Component {} is not registered!",
-                std::any::type_name::<T>()
-            )
+    pub fn remove<T: Component>(&mut self, entity: Entity) {
+        let Some(index) = self.entity_allocator.find_entity_index(entity) else {
+            return;
         };
 
-        let Some(sparse_set) = any_sparse_set.as_any_mut().downcast_mut::<SparseSet<T>>() else {
-            panic!(
-                "Component {} could not be downcasted!",
-                std::any::type_name::<T>()
-            )
+        let type_id = TypeId::of::<T>();
+
+        let Some(any_vec) = self.components.get_mut(&type_id) else {
+            return;
         };
 
-        sparse_set.insert(entity, component);
+        let Some(storage) = any_vec.as_any_mut().downcast_mut::<ComponentVec<T>>() else {
+            return;
+        };
+
+        storage.remove(index);
     }
 
-    pub fn remove_component<T: Component>(&mut self, entity: Entity) {
-        if !self.index_allocator.is_valid(entity) {
-            panic!("Trying to add a component to an invalid entity")
-        }
+    pub fn components<T: Component>(&self) -> Option<impl Iterator<Item = Option<Ref<T>>>> {
+        let type_id = TypeId::of::<T>();
 
-        let Some(component_set) = self.components.get_mut(&TypeId::of::<T>()) else {
-            panic!(
-                "Component {} is not registered!",
-                std::any::type_name::<T>()
-            )
+        let Some(any_vec) = self.components.get(&type_id) else {
+            return None;
         };
 
-        component_set.remove(entity);
+        let Some(storage) = any_vec.as_any().downcast_ref::<ComponentVec<T>>() else {
+            return None;
+        };
+
+        Some(storage.components())
+    }
+
+    pub fn components_mut<T: Component>(&self) -> Option<impl Iterator<Item = Option<RefMut<T>>>> {
+        let type_id = TypeId::of::<T>();
+
+        let Some(any_vec) = self.components.get(&type_id) else {
+            return None;
+        };
+
+        let Some(storage) = any_vec.as_any().downcast_ref::<ComponentVec<T>>() else {
+            return None;
+        };
+
+        Some(storage.components_mut())
     }
 }

@@ -1,6 +1,6 @@
 mod command_buffer;
-mod index_allocator;
-mod sparse_set;
+mod component_vec;
+mod entity_allocator;
 mod world;
 
 pub use command_buffer::CommandBuffer;
