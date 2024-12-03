@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Mesh {
-    pub handle: &'static str,
+    pub handle: String,
 }

@@ -124,7 +124,7 @@ impl World {
         storage.remove(index);
     }
 
-    pub fn components<T: Component>(&self) -> Option<impl Iterator<Item = Option<Ref<T>>>> {
+    pub fn components<T: Component>(&self) -> Option<Ref<Vec<Option<T>>>> {
         let type_id = TypeId::of::<T>();
 
         let Some(any_vec) = self.components.get(&type_id) else {
@@ -138,7 +138,7 @@ impl World {
         Some(storage.components())
     }
 
-    pub fn components_mut<T: Component>(&self) -> Option<impl Iterator<Item = Option<RefMut<T>>>> {
+    pub fn components_mut<T: Component>(&self) -> Option<RefMut<Vec<Option<T>>>> {
         let type_id = TypeId::of::<T>();
 
         let Some(any_vec) = self.components.get(&type_id) else {

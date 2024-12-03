@@ -7,36 +7,30 @@ use super::world::Component;
 
 #[derive(Debug)]
 pub struct ComponentVec<T> {
-    components: Vec<Option<RefCell<T>>>,
+    components: RefCell<Vec<Option<T>>>,
 }
 
 impl<T: Component> ComponentVec<T> {
     pub fn new() -> Self {
         Self {
-            components: Vec::new(),
+            components: RefCell::new(Vec::new()),
         }
     }
 
     pub fn insert(&mut self, index: usize, component: T) {
-        self.components[index] = Some(RefCell::new(component));
+        self.components.borrow_mut()[index] = Some(component);
     }
 
     pub fn remove(&mut self, index: usize) {
-        self.components[index] = None;
+        self.components.borrow_mut()[index] = None;
     }
 
-    pub fn components(&self) -> impl Iterator<Item = Option<Ref<T>>> {
-        self.components.iter().map(|component| match component {
-            Some(component) => Some(Ref::map(component.borrow(), |data| data)),
-            None => None,
-        })
+    pub fn components(&self) -> Ref<Vec<Option<T>>> {
+        Ref::map(self.components.borrow(), |components| components)
     }
 
-    pub fn components_mut(&self) -> impl Iterator<Item = Option<RefMut<T>>> {
-        self.components.iter().map(|component| match component {
-            Some(component) => Some(RefMut::map(component.borrow_mut(), |data| data)),
-            None => None,
-        })
+    pub fn components_mut(&self) -> RefMut<Vec<Option<T>>> {
+        RefMut::map(self.components.borrow_mut(), |components| components)
     }
 }
 
@@ -57,10 +51,10 @@ impl<T: Component> AnyVec for ComponentVec<T> {
     }
 
     fn default(&mut self) {
-        self.components.push(None);
+        self.components.borrow_mut().push(None);
     }
 
     fn swap_remove(&mut self, index: usize) {
-        self.components.swap_remove(index);
+        self.components.borrow_mut().swap_remove(index);
     }
 }

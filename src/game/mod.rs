@@ -1,16 +1,16 @@
+mod components;
+mod systems;
+
+use systems::quad_system;
 use winit::window::Window;
+
+use components::{Mesh, Quad};
 
 use crate::{
     renderer::Renderer,
     resources::{Clock, Input},
-    world::{CommandBuffer, World},
+    world::World,
 };
-
-#[derive(Debug)]
-struct Player;
-
-#[derive(Debug)]
-struct Enemy;
 
 pub struct Game {
     input: Input,
@@ -22,31 +22,19 @@ pub struct Game {
 impl Game {
     pub fn new(window: Window) -> Self {
         let mut world = World::new();
-        world.register::<Player>();
-        // world.register_component::<Enemy>();
+        world.register::<Quad>();
+        world.register::<Mesh>();
 
         let player = world.spawn();
-        world.insert(player, Player);
-
-        world.spawn();
-        world.spawn();
-
-        world.despawn(player);
-
-        let enemy = world.spawn();
-        world.insert(enemy, Player);
-
-        world.spawn();
+        world.insert(
+            player,
+            Quad {
+                width: 100,
+                height: 100,
+            },
+        );
 
         println!("@Init -> {:?}", world);
-
-        for (entity, player) in world
-            .entities()
-            .zip(world.components::<Player>().unwrap())
-            .filter_map(|(entity, player)| Some((entity, player?)))
-        {
-            println!("@For -> {:?} {:?}", entity, player);
-        }
 
         Self {
             input: Input::new(),
@@ -57,15 +45,11 @@ impl Game {
     }
 
     pub fn update(&mut self) {
-        for _delta_time in self.clock.update() {
-            // if let Some(iter) = self.world.iter_components::<Player>() {
-            //     for (entity, player) in iter {
-            //         println!("@Entity: {:?}", entity);
-            //     }
-            // }
-        }
+        quad_system(&mut self.world, &mut self.renderer);
 
-        // println!("@Update -> {:?}", self.world);
+        for _delta_time in self.clock.update() {}
+
+        println!("@Update -> {:?}", self.world);
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
 
