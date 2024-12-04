@@ -3,8 +3,6 @@ mod renderer;
 mod resources;
 mod world;
 
-use std::{thread::sleep, time::Duration};
-
 use winit::{
     application::ApplicationHandler, dpi::PhysicalSize, event::WindowEvent, event_loop::EventLoop,
     window::Window,
@@ -64,10 +62,7 @@ impl ApplicationHandler for App {
         app_state.input().start_step(&event);
 
         match event {
-            WindowEvent::RedrawRequested => {
-                app_state.update();
-                sleep(Duration::from_secs(1 / 60)); // Simulation of 60 fps.
-            }
+            WindowEvent::RedrawRequested => app_state.update(),
             WindowEvent::CloseRequested => self.state = AppState::Closing,
             _ => (),
         }

@@ -23,6 +23,10 @@ impl Clock {
 
         ClockIterator { clock: self }
     }
+
+    pub fn frame_duration(&self) -> Duration {
+        self.frame_duration
+    }
 }
 
 pub struct ClockIterator<'a> {

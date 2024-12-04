@@ -1,6 +1,8 @@
 mod components;
 mod systems;
 
+use std::thread::sleep;
+
 use image::GenericImageView;
 use winit::window::Window;
 
@@ -24,12 +26,10 @@ impl Game {
         let mut asset_loader = AssetLoader::new();
         let mut world = World::new();
 
-        let texture_handle = asset_loader
-            .load_texture("assets/black_square.png")
-            .unwrap();
-        println!("{:?}", texture_handle);
-        let texture = asset_loader.get_texture(texture_handle).unwrap();
-        println!("{:?}", texture.image.dimensions());
+        let image_handle = asset_loader.load_image("assets/black_square.png").unwrap();
+        println!("{:?}", image_handle);
+        let image = asset_loader.get_image(image_handle).unwrap();
+        println!("{:?}", image.dimensions());
 
         Self {
             input: Input::new(),
@@ -42,9 +42,11 @@ impl Game {
     }
 
     pub fn update(&mut self) {
-        for _delta_time in self.clock.update() {}
+        for _delta_time in self.clock.update() {
+            // println!("@Update -> {:?}", self.world);
+        }
 
-        // println!("@Update -> {:?}", self.world);
+        sleep(self.clock.frame_duration());
     }
 
     pub fn input(&mut self) -> &mut Input {
