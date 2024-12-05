@@ -8,6 +8,7 @@ use std::{
 use super::{
     component_vec::{AnyVec, ComponentVec},
     entity_allocator::{Entity, EntityAllocator},
+    CommandBuffer,
 };
 
 pub trait Component: Debug + Send + Sync + 'static {}
@@ -150,5 +151,9 @@ impl World {
         };
 
         Some(storage.components_mut())
+    }
+
+    pub fn command_buffer() -> CommandBuffer {
+        CommandBuffer::new()
     }
 }

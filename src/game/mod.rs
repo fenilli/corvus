@@ -2,9 +2,10 @@ mod components;
 mod systems;
 
 use std::thread::sleep;
-
-use image::GenericImageView;
+use systems::quad_system;
 use winit::window::Window;
+
+use components::{MeshComponent, QuadComponent};
 
 use crate::{
     renderer::Renderer,
@@ -15,35 +16,46 @@ use crate::{
 pub struct Game {
     input: Input,
     clock: Clock,
-    renderer: Renderer,
     asset_loader: AssetLoader,
 
     world: World,
+
+    renderer: Renderer,
 }
 
 impl Game {
     pub fn new(window: Window) -> Self {
-        let mut asset_loader = AssetLoader::new();
         let mut world = World::new();
+        world.register::<MeshComponent>();
+        world.register::<QuadComponent>();
 
-        let image_handle = asset_loader.load_image("assets/black_square.png").unwrap();
-        println!("{:?}", image_handle);
-        let image = asset_loader.get_image(image_handle).unwrap();
-        println!("{:?}", image.dimensions());
+        let player = world.spawn();
+        world.insert(
+            player,
+            QuadComponent {
+                height: 100.0,
+                width: 100.0,
+            },
+        );
+
+        println!("@Init -> {:?}\n", world);
 
         Self {
             input: Input::new(),
             clock: Clock::new(60),
-            renderer: Renderer::new(window),
-            asset_loader,
+            asset_loader: AssetLoader::new(),
 
             world,
+
+            renderer: Renderer::new(window),
         }
     }
 
     pub fn update(&mut self) {
         for _delta_time in self.clock.update() {
-            // println!("@Update -> {:?}", self.world);
+            quad_system(&mut self.world);
+
+            println!("@Update -> {:?}\n", self.world);
         }
 
         sleep(self.clock.frame_duration());
