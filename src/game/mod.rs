@@ -2,10 +2,7 @@ mod components;
 mod systems;
 
 use std::thread::sleep;
-use systems::quad_system;
 use winit::window::Window;
-
-use components::{MeshComponent, QuadComponent};
 
 use crate::{
     renderer::Renderer,
@@ -26,17 +23,6 @@ pub struct Game {
 impl Game {
     pub fn new(window: Window) -> Self {
         let mut world = World::new();
-        world.register::<MeshComponent>();
-        world.register::<QuadComponent>();
-
-        let player = world.spawn();
-        world.insert(
-            player,
-            QuadComponent {
-                height: 100.0,
-                width: 100.0,
-            },
-        );
 
         println!("@Init -> {:?}\n", world);
 
@@ -53,8 +39,6 @@ impl Game {
 
     pub fn update(&mut self) {
         for _delta_time in self.clock.update() {
-            quad_system(&mut self.world);
-
             println!("@Update -> {:?}\n", self.world);
         }
 
