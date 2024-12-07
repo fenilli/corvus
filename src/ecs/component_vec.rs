@@ -1,11 +1,7 @@
-use std::{
-    cell::{Ref, RefCell, RefMut},
-    fmt::Debug,
-};
+use std::cell::{Ref, RefCell, RefMut};
 
 use super::world::Component;
 
-#[derive(Debug)]
 pub struct ComponentVec<T> {
     components: RefCell<Vec<Option<T>>>,
 }
@@ -34,7 +30,7 @@ impl<T: Component> ComponentVec<T> {
     }
 }
 
-pub trait AnyVec: Debug {
+pub trait AnyVec {
     fn as_any(&self) -> &dyn std::any::Any;
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
     fn default(&mut self);

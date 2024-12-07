@@ -2,30 +2,19 @@ use std::{
     any::TypeId,
     cell::{Ref, RefMut},
     collections::HashMap,
-    fmt::Debug,
 };
 
 use super::{
     component_vec::{AnyVec, ComponentVec},
     entity_allocator::{Entity, EntityAllocator},
-    CommandBuffer,
 };
 
-pub trait Component: Debug + Send + Sync + 'static {}
-impl<T: Debug + Send + Sync + 'static> Component for T {}
+pub trait Component: Send + Sync + 'static {}
+impl<T: Send + Sync + 'static> Component for T {}
 
 pub struct World {
     entity_allocator: EntityAllocator,
     components: HashMap<TypeId, Box<dyn AnyVec>>,
-}
-
-impl Debug for World {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("World")
-            .field("entity_allocator", &self.entity_allocator)
-            .field("components", &self.components)
-            .finish()
-    }
 }
 
 impl World {
@@ -151,9 +140,5 @@ impl World {
         };
 
         Some(storage.components_mut())
-    }
-
-    pub fn command_buffer() -> CommandBuffer {
-        CommandBuffer::new()
     }
 }

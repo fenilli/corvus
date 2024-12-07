@@ -20,6 +20,7 @@ pub struct Input {
     cursor_position: PhysicalPosition<f64>,
 }
 
+#[allow(dead_code)]
 impl Input {
     pub fn new() -> Self {
         Self {
