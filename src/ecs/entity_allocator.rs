@@ -1,7 +1,7 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Entity {
-    pub(super) id: usize,
-    pub(super) generation: u32,
+    pub id: usize,
+    pub generation: u32,
 }
 
 #[derive(Debug)]

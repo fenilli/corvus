@@ -1,12 +1,12 @@
 use super::World;
 
 #[allow(dead_code)]
-pub struct Command {
+pub struct Commands {
     commands: Vec<Box<dyn FnOnce(&mut World) + Send + Sync>>,
 }
 
 #[allow(dead_code)]
-impl Command {
+impl Commands {
     pub fn new() -> Self {
         Self {
             commands: Vec::new(),
