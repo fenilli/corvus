@@ -39,22 +39,16 @@ impl Scene for Menu {
     fn fixed_update(&mut self, _delta_time: f32, context: &mut AppContext) {
         println!("fixed_update");
 
-        let transforms = context.world.components::<Transform>();
-        let meshes = context.world.components::<Mesh>();
+        let iter = context.world.entities().filter_map(|entity| {
+            let (Some(transform), Some(mesh)) = (
+                context.world.get_component::<Transform>(entity),
+                context.world.get_component::<Mesh>(entity),
+            ) else {
+                return None;
+            };
 
-        let (Some(transforms), Some(meshes)) = (transforms, meshes) else {
-            return;
-        };
-
-        let iter = context
-            .world
-            .entities()
-            .zip(transforms.iter())
-            .zip(meshes.iter())
-            .filter_map(|((entity, transform), mesh)| match (transform, mesh) {
-                (Some(transform), Some(mesh)) => Some((entity, transform, mesh)),
-                (_, _) => None,
-            });
+            Some((entity, transform, mesh))
+        });
 
         for (entity, transform, mesh) in iter {
             println!(
