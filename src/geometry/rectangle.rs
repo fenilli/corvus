@@ -1,5 +1,6 @@
 use crate::{render::Vertex, resources::Mesh};
 
+#[allow(dead_code)]
 pub struct Rectangle {
     pub width: f32,
     pub height: f32,

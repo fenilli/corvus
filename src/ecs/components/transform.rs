@@ -1,5 +1,6 @@
 use nalgebra::Vector2;
 
+#[allow(dead_code)]
 pub struct Transform {
     pub position: Vector2<f32>,
     pub scale: f32,

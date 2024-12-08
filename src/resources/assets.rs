@@ -8,6 +8,7 @@ pub struct Assets<T> {
     next_id: u64,
 }
 
+#[allow(dead_code)]
 impl<T> Assets<T> {
     pub fn new() -> Self {
         Self {

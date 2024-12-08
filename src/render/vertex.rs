@@ -5,6 +5,7 @@ pub struct Vertex {
     pub uv: [f32; 2],
 }
 
+#[allow(dead_code)]
 impl Vertex {
     pub fn new(position: [f32; 2], uv: [f32; 2]) -> Self {
         Self { position, uv }
