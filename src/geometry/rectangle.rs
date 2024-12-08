@@ -1,4 +1,4 @@
-use crate::resources::Mesh;
+use crate::{render::Vertex, resources::Mesh};
 
 pub struct Rectangle {
     pub width: f32,
@@ -11,7 +11,12 @@ impl Rectangle {
         let hh = height / 2.;
 
         Mesh::from_data(
-            vec![[-hw, -hh, 0.], [hw, -hh, 0.], [hw, hh, 0.], [-hw, hh, 0.]],
+            vec![
+                Vertex::new([-hw, -hh], [0., 0.]),
+                Vertex::new([hw, -hh], [0., 0.]),
+                Vertex::new([hw, hh], [0., 0.]),
+                Vertex::new([-hw, hh], [0., 0.]),
+            ],
             vec![0, 1, 2, 2, 3, 0],
         )
     }

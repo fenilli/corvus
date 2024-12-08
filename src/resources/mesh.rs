@@ -1,5 +1,7 @@
+use crate::render::Vertex;
+
 pub struct Mesh {
-    pub vertices: Vec<[f32; 3]>,
+    pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,
 }
 
@@ -11,7 +13,7 @@ impl Mesh {
         }
     }
 
-    pub fn from_data(vertices: Vec<[f32; 3]>, indices: Vec<u32>) -> Self {
+    pub fn from_data(vertices: Vec<Vertex>, indices: Vec<u32>) -> Self {
         Self { vertices, indices }
     }
 }
