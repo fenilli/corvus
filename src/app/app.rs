@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{
     ecs::{
-        components::{Mesh, Transform},
+        components::{Mesh2d, Transform},
         Commands,
     },
     geometry::Rectangle,
@@ -22,7 +22,7 @@ impl Scene for Menu {
         println!("enter");
 
         context.world.register::<Transform>();
-        context.world.register::<Mesh>();
+        context.world.register::<Mesh2d>();
 
         let handle = context
             .resource_manager
@@ -32,7 +32,7 @@ impl Scene for Menu {
         context.commands.schedule(move |world| {
             let player = world.spawn();
             world.insert(player, Transform::from_xy(100., 100.));
-            world.insert(player, Mesh::new(handle));
+            world.insert(player, Mesh2d::new(handle));
         });
     }
 
@@ -42,7 +42,7 @@ impl Scene for Menu {
         let iter = context.world.entities().filter_map(|entity| {
             let (Some(transform), Some(mesh)) = (
                 context.world.get_component::<Transform>(entity),
-                context.world.get_component::<Mesh>(entity),
+                context.world.get_component::<Mesh2d>(entity),
             ) else {
                 return None;
             };
@@ -53,7 +53,9 @@ impl Scene for Menu {
         for (entity, transform, mesh) in iter {
             println!(
                 "@E: {} -> @T: {} -> @M: {}",
-                entity.id, transform.position, mesh.handle.0
+                entity.id,
+                transform.position,
+                mesh.handle.id()
             );
         }
     }
@@ -66,7 +68,7 @@ impl Scene for Menu {
         println!("exit");
 
         context.world.unregister::<Transform>();
-        context.world.unregister::<Mesh>();
+        context.world.unregister::<Mesh2d>();
 
         context.resource_manager.meshes.clear();
     }
