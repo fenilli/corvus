@@ -1,13 +1,7 @@
-use super::{Assets, Mesh};
+pub struct AssetManager {}
 
-pub struct ResourceManager {
-    pub meshes: Assets<Mesh>,
-}
-
-impl ResourceManager {
+impl AssetManager {
     pub fn new() -> Self {
-        Self {
-            meshes: Assets::new(),
-        }
+        Self {}
     }
 }

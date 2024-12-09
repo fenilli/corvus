@@ -1,6 +1,5 @@
 mod app;
 mod ecs;
-mod geometry;
 mod render;
 mod resources;
 

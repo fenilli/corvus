@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use winit::{event::WindowEvent, window::Window};
 
 use super::{
@@ -6,13 +8,11 @@ use super::{
     scene::{Scene, SceneManager},
     timestep::Timestep,
 };
+
 use crate::{
-    ecs::{
-        components::{Mesh2d, Transform},
-        Commands,
-    },
-    geometry::Rectangle,
-    resources::ResourceManager,
+    ecs::{components::Transform, Commands},
+    render::Renderer,
+    resources::AssetManager,
     World,
 };
 
@@ -22,17 +22,10 @@ impl Scene for Menu {
         println!("enter");
 
         context.world.register::<Transform>();
-        context.world.register::<Mesh2d>();
-
-        let handle = context
-            .resource_manager
-            .meshes
-            .add(Rectangle::new(100., 100.));
 
         context.commands.schedule(move |world| {
             let player = world.spawn();
             world.insert(player, Transform::from_xy(100., 100.));
-            world.insert(player, Mesh2d::new(handle));
         });
     }
 
@@ -40,23 +33,15 @@ impl Scene for Menu {
         println!("fixed_update");
 
         let iter = context.world.entities().filter_map(|entity| {
-            let (Some(transform), Some(mesh)) = (
-                context.world.get_component::<Transform>(entity),
-                context.world.get_component::<Mesh2d>(entity),
-            ) else {
+            let Some(transform) = context.world.get_component::<Transform>(entity) else {
                 return None;
             };
 
-            Some((entity, transform, mesh))
+            Some((entity, transform))
         });
 
-        for (entity, transform, mesh) in iter {
-            println!(
-                "@E: {} -> @T: {} -> @M: {}",
-                entity.id,
-                transform.position,
-                mesh.handle.id()
-            );
+        for (entity, transform) in iter {
+            println!("@E: {} -> @T: {}", entity.id, transform.position);
         }
     }
 
@@ -66,11 +51,6 @@ impl Scene for Menu {
 
     fn exit(&mut self, context: &mut AppContext) {
         println!("exit");
-
-        context.world.unregister::<Transform>();
-        context.world.unregister::<Mesh2d>();
-
-        context.resource_manager.meshes.clear();
     }
 }
 
@@ -80,14 +60,18 @@ pub struct App {
     timestep: Timestep,
     world: World,
     commands: Commands,
-    resource_manager: ResourceManager,
+
+    asset_manager: AssetManager,
     scene_manager: SceneManager,
 
-    window: Window,
+    renderer: Renderer,
+    window: Arc<Window>,
 }
 
 impl App {
     pub fn new(window: Window) -> Self {
+        let window = Arc::new(window);
+
         let mut scene_manager = SceneManager::new();
         scene_manager.change(Menu);
 
@@ -96,9 +80,11 @@ impl App {
             timestep: Timestep::new(60),
             world: World::new(),
             commands: Commands::new(),
-            resource_manager: ResourceManager::new(),
+
+            asset_manager: AssetManager::new(),
             scene_manager,
 
+            renderer: Renderer::new(window.clone()),
             window,
         }
     }
@@ -109,7 +95,7 @@ impl App {
         match event {
             WindowEvent::RedrawRequested => {
                 let mut context = AppContext {
-                    resource_manager: &mut self.resource_manager,
+                    asset_manager: &mut self.asset_manager,
                     commands: &mut self.commands,
                     world: &mut self.world,
                 };
@@ -128,6 +114,7 @@ impl App {
                 self.input.end_step();
             }
             WindowEvent::CloseRequested => return false,
+            WindowEvent::Resized(size) => self.renderer.resize(size),
             _ => (),
         };
 
