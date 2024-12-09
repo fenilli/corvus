@@ -1,9 +1,9 @@
 mod gpu_context;
+mod pipeline;
 mod renderer;
-mod sprite_pipeline;
 mod vertex;
 
 pub use gpu_context::GpuContext;
+pub use pipeline::Pipeline;
 pub use renderer::Renderer;
-pub use sprite_pipeline::SpritePipeline;
 pub use vertex::Vertex;

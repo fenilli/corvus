@@ -1,25 +1,26 @@
+struct VertexInput {
+    @location(0) position: vec3<f32>,
+    @location(1) color: vec3<f32>,
+};
+
 struct VertexOutput {
-    @builtin(position) position: vec4f,
-    @location(0) color: vec4f,
-}
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) color: vec3<f32>,
+};
 
 @vertex
-fn vs_main(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
-    let position = array(
-        vec2f(-0.5, -0.5),
-        vec2f(0.5, -0.5),
-        vec2f(0.5, 0.5),
-    );
+fn vs_main(
+    model: VertexInput,
+) -> VertexOutput {
+    var out: VertexOutput;
 
-    var output: VertexOutput;
+    out.clip_position = vec4<f32>(model.position, 1.0);
+    out.color = model.color;
 
-    output.position = vec4f(position[vertex_index], 0.0, 1.0);
-    output.color = vec4f(1.0, 0.0, 0.0, 1.0);
-
-    return output;
+    return out;
 }
 
 @fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4f {
-    return in.color;
+fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    return vec4<f32>(in.color, 1.0);
 }

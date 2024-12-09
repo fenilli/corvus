@@ -1,14 +1,14 @@
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
-    pub position: [f32; 2],
-    pub uv: [f32; 2],
+    pub position: [f32; 3],
+    pub color: [f32; 3],
 }
 
 #[allow(dead_code)]
 impl Vertex {
-    pub fn new(position: [f32; 2], uv: [f32; 2]) -> Self {
-        Self { position, uv }
+    pub fn new(position: [f32; 3], color: [f32; 3]) -> Self {
+        Self { position, color }
     }
 
     pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
@@ -19,12 +19,12 @@ impl Vertex {
                 wgpu::VertexAttribute {
                     offset: 0,
                     shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x2,
+                    format: wgpu::VertexFormat::Float32x3,
                 },
                 wgpu::VertexAttribute {
-                    offset: std::mem::size_of::<[f32; 2]>() as wgpu::BufferAddress,
+                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                     shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x2,
+                    format: wgpu::VertexFormat::Float32x3,
                 },
             ],
         }

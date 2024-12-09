@@ -10,14 +10,18 @@ use super::{
 };
 
 use crate::{
-    ecs::{components::Transform, systems::render_system, Commands},
+    ecs::{
+        components::{Sprite, Transform},
+        systems::render_system,
+        Commands,
+    },
     render::Renderer,
     resources::AssetManager,
     World,
 };
 
-pub struct Menu;
-impl Scene for Menu {
+pub struct Game;
+impl Scene for Game {
     fn enter(&mut self, context: &mut AppContext) {
         println!("enter");
 
@@ -25,32 +29,21 @@ impl Scene for Menu {
 
         context.commands.schedule(move |world| {
             let player = world.spawn();
+            world.insert(player, Sprite);
             world.insert(player, Transform::from_xy(100., 100.));
         });
     }
 
-    fn fixed_update(&mut self, _delta_time: f32, context: &mut AppContext) {
-        println!("fixed_update");
-
-        let iter = context.world.entities().filter_map(|entity| {
-            let Some(transform) = context.world.get_component::<Transform>(entity) else {
-                return None;
-            };
-
-            Some((entity, transform))
-        });
-
-        for (entity, transform) in iter {
-            println!("@E: {} -> @T: {}", entity.id, transform.position);
-        }
+    fn fixed_update(&mut self, _delta_time: f32, _context: &mut AppContext) {
+        // println!("fixed_update");
     }
 
     fn update(&mut self, _delta_time: f32, _context: &mut AppContext) {
         // println!("update {}", delta_time);
     }
 
-    fn exit(&mut self, context: &mut AppContext) {
-        println!("exit");
+    fn exit(&mut self, _context: &mut AppContext) {
+        // println!("exit");
     }
 }
 
@@ -73,7 +66,7 @@ impl App {
         let window = Arc::new(window);
 
         let mut scene_manager = SceneManager::new();
-        scene_manager.change(Menu);
+        scene_manager.change(Game);
 
         Self {
             input: Input::new(),

@@ -2,11 +2,11 @@ use wgpu::{BindGroupLayout, Device};
 
 use super::Vertex;
 
-pub struct SpritePipeline {
+pub struct Pipeline {
     pub render_pipeline: wgpu::RenderPipeline,
 }
 
-impl SpritePipeline {
+impl Pipeline {
     pub fn new(device: &Device, bind_group_layouts: &[&BindGroupLayout]) -> Self {
         let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Sprite Pipeline Shader"),
@@ -16,8 +16,7 @@ impl SpritePipeline {
         let vertex_state = wgpu::VertexState {
             module: &shader_module,
             entry_point: Some("vs_main"),
-            buffers: &[],
-            // buffers: &[Vertex::desc()],
+            buffers: &[Vertex::desc()],
             compilation_options: Default::default(),
         };
 
