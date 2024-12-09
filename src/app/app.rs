@@ -10,7 +10,7 @@ use super::{
 };
 
 use crate::{
-    ecs::{components::Transform, Commands},
+    ecs::{components::Transform, systems::render_system, Commands},
     render::Renderer,
     resources::AssetManager,
     World,
@@ -109,6 +109,8 @@ impl App {
                 }
 
                 self.scene_manager.update(variable_delta, &mut context);
+
+                render_system(&mut self.world, &mut self.renderer);
 
                 self.commands.execute(&mut self.world);
                 self.input.end_step();

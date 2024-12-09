@@ -9,6 +9,8 @@ pub struct GpuContext {
     pub surface_config: SurfaceConfiguration,
     pub device: Device,
     pub queue: Queue,
+
+    pub window: Arc<Window>,
 }
 
 impl GpuContext {
@@ -45,6 +47,8 @@ impl GpuContext {
             surface_config,
             device,
             queue,
+
+            window,
         }
     }
 }
