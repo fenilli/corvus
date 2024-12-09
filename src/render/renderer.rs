@@ -6,18 +6,18 @@ use super::{GpuContext, SpritePipeline};
 
 pub struct Renderer {
     gpu: GpuContext,
-    // sprite_pipeline: SpritePipeline,
+    sprite_pipeline: SpritePipeline,
 }
 
 impl Renderer {
     pub fn new(window: Arc<Window>) -> Self {
         let gpu = GpuContext::new(window);
 
-        // let sprite_pipeline = SpritePipeline::new(&gpu.device, &[]);
+        let sprite_pipeline = SpritePipeline::new(&gpu.device, &[]);
 
         Self {
             gpu,
-            // sprite_pipeline,
+            sprite_pipeline,
         }
     }
 
@@ -36,7 +36,7 @@ impl Renderer {
                         });
 
                 {
-                    let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: Some("Render Pass"),
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                             view: &view,
@@ -53,6 +53,9 @@ impl Renderer {
                         })],
                         ..Default::default()
                     });
+
+                    render_pass.set_pipeline(&self.sprite_pipeline.render_pipeline);
+                    render_pass.draw(0..3, 0..1);
                 }
 
                 self.gpu.queue.submit(std::iter::once(encoder.finish()));

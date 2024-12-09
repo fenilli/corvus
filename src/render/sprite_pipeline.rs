@@ -16,7 +16,8 @@ impl SpritePipeline {
         let vertex_state = wgpu::VertexState {
             module: &shader_module,
             entry_point: Some("vs_main"),
-            buffers: &[Vertex::desc()],
+            buffers: &[],
+            // buffers: &[Vertex::desc()],
             compilation_options: Default::default(),
         };
 
