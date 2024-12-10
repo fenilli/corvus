@@ -1,79 +1,140 @@
 use std::sync::Arc;
 
-use wgpu::{util::DeviceExt, Buffer, RenderPipeline};
+use wgpu::{util::DeviceExt, BindGroup, Buffer, BufferUsages, RenderPipeline};
 use winit::{dpi::PhysicalSize, window::Window};
+
+use crate::ecs::components::Camera;
 
 use super::{GpuContext, Pipeline, Vertex};
 
 pub struct Renderer {
     gpu: GpuContext,
-    render_pipeline: RenderPipeline,
 
+    camera: Camera,
+
+    projection_uniform_buffer: Buffer,
     quad_vertex_buffer: Buffer,
     quad_index_buffer: Buffer,
     quad_num_indices: u32,
+    projection_bind_group: BindGroup,
+
+    render_pipeline: RenderPipeline,
 }
 
 impl Renderer {
     pub fn new(window: Arc<Window>) -> Self {
         let gpu = GpuContext::new(window);
+        let size = gpu.window.inner_size();
+        let camera = Camera::new(size.width, size.height);
 
-        let pipeline = Pipeline::new(&gpu.device, &[]);
+        let projection_bind_group_layout =
+            gpu.device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("Projection Bind Group Layout"),
+                    entries: &[wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    }],
+                });
 
-        const VERTICES: &[Vertex] = &[
-            Vertex {
-                position: [-0.0868241, 0.49240386, 0.0],
-                color: [0.5, 0.0, 0.5],
-            }, // A
-            Vertex {
-                position: [-0.49513406, 0.06958647, 0.0],
-                color: [0.5, 0.0, 0.5],
-            }, // B
-            Vertex {
-                position: [-0.21918549, -0.44939706, 0.0],
-                color: [0.5, 0.0, 0.5],
-            }, // C
-            Vertex {
-                position: [0.35966998, -0.3473291, 0.0],
-                color: [0.5, 0.0, 0.5],
-            }, // D
-            Vertex {
-                position: [0.44147372, 0.2347359, 0.0],
-                color: [0.5, 0.0, 0.5],
-            }, // E
+        let pipeline = Pipeline::new(&gpu.device, &[&projection_bind_group_layout]);
+
+        let projection_uniform_buffer = gpu.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Projection Uniform Buffer"),
+            size: std::mem::size_of_val(&camera.projection) as wgpu::BufferAddress,
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        let vertices: &[Vertex] = &[
+            // Top-left
+            Vertex::new(
+                [0.0, 0.0], // Position
+                [0.0, 0.0], // UV
+                [1.0, 1.0, 1.0],
+            ),
+            // Top-right
+            Vertex::new(
+                [0.0 + 100.0, 0.0], // Position
+                [0.0, 1.0],         // UV
+                [1.0, 1.0, 1.0],
+            ),
+            // Bottom-right
+            Vertex::new(
+                [0.0 + 100.0, 0.0 + 100.0], // Position
+                [1.0, 1.0],                 // UV
+                [1.0, 1.0, 1.0],
+            ),
+            // Bottom-left
+            Vertex::new(
+                [0.0, 0.0 + 100.0], // Position
+                [1.0, 0.0],         // UV
+                [1.0, 1.0, 1.0],
+            ),
         ];
 
-        const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
+        let indices: &[u16] = &[
+            0, 1, 2, // First triangle
+            0, 2, 3, // Second triangle
+        ];
 
         let quad_vertex_buffer = gpu
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(VERTICES),
+                contents: bytemuck::cast_slice(vertices),
                 usage: wgpu::BufferUsages::VERTEX,
             });
         let quad_index_buffer = gpu
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(INDICES),
+                contents: bytemuck::cast_slice(indices),
                 usage: wgpu::BufferUsages::INDEX,
             });
-        let quad_num_indices = INDICES.len() as u32;
+        let quad_num_indices = indices.len() as u32;
+
+        let projection_bind_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Projection Bind Group"),
+            layout: &projection_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Buffer(
+                    projection_uniform_buffer.as_entire_buffer_binding(),
+                ),
+            }],
+        });
 
         Self {
             gpu,
-            render_pipeline: pipeline.render_pipeline,
 
+            camera,
+
+            projection_uniform_buffer,
             quad_vertex_buffer,
             quad_index_buffer,
             quad_num_indices,
+            projection_bind_group,
+
+            render_pipeline: pipeline.render_pipeline,
         }
     }
 
     pub fn render(&mut self) {
         match self.gpu.surface.get_current_texture() {
             Ok(output) => {
+                self.gpu.queue.write_buffer(
+                    &self.projection_uniform_buffer,
+                    0,
+                    bytemuck::cast_slice(self.camera.projection.as_slice().into()),
+                );
+
                 let view = output
                     .texture
                     .create_view(&wgpu::TextureViewDescriptor::default());
@@ -110,6 +171,7 @@ impl Renderer {
                         wgpu::IndexFormat::Uint16,
                     );
                     render_pass.set_vertex_buffer(0, self.quad_vertex_buffer.slice(..));
+                    render_pass.set_bind_group(0, &self.projection_bind_group, &[]);
                     render_pass.draw_indexed(0..self.quad_num_indices, 0, 0..1);
                 }
 
