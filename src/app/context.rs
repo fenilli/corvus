@@ -1,7 +1,7 @@
-use crate::{ecs::Commands, resources::AssetManager, World};
+use crate::ecs::Commands;
 
 pub struct AppContext<'a> {
-    pub asset_manager: &'a mut AssetManager,
+    // pub asset_manager: &'a mut AssetManager,
     pub commands: &'a mut Commands,
-    pub world: &'a mut World,
+    // pub world: &'a mut World,
 }

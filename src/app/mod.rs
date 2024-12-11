@@ -5,4 +5,4 @@ mod scene;
 mod timestep;
 
 pub use app::App;
-pub use context::AppContext;
+// pub use context::AppContext;

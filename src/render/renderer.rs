@@ -5,7 +5,7 @@ use winit::{dpi::PhysicalSize, window::Window};
 
 use crate::ecs::components::Camera;
 
-use super::{GpuContext, Pipeline, Vertex};
+use super::{GpuContext, Instance, Pipeline};
 
 pub struct Renderer {
     gpu: GpuContext,
@@ -13,16 +13,20 @@ pub struct Renderer {
     camera: Camera,
 
     projection_uniform_buffer: Buffer,
-    quad_vertex_buffer: Buffer,
-    quad_index_buffer: Buffer,
-    quad_num_indices: u32,
-    projection_bind_group: BindGroup,
+    instance_buffer: Buffer,
+    index_buffer: Buffer,
 
+    max_num_entities: usize,
+    num_indices: u32,
+
+    projection_bind_group: BindGroup,
     render_pipeline: RenderPipeline,
 }
 
 impl Renderer {
     pub fn new(window: Arc<Window>) -> Self {
+        let max_num_entities = 100;
+
         let gpu = GpuContext::new(window);
         let size = gpu.window.inner_size();
         let camera = Camera::new(size.width, size.height);
@@ -52,53 +56,22 @@ impl Renderer {
             mapped_at_creation: false,
         });
 
-        let vertices: &[Vertex] = &[
-            // Top-left
-            Vertex::new(
-                [0.0, 0.0], // Position
-                [0.0, 0.0], // UV
-                [1.0, 1.0, 1.0],
-            ),
-            // Top-right
-            Vertex::new(
-                [0.0 + 100.0, 0.0], // Position
-                [0.0, 1.0],         // UV
-                [1.0, 1.0, 1.0],
-            ),
-            // Bottom-right
-            Vertex::new(
-                [0.0 + 100.0, 0.0 + 100.0], // Position
-                [1.0, 1.0],                 // UV
-                [1.0, 1.0, 1.0],
-            ),
-            // Bottom-left
-            Vertex::new(
-                [0.0, 0.0 + 100.0], // Position
-                [1.0, 0.0],         // UV
-                [1.0, 1.0, 1.0],
-            ),
-        ];
+        let instance_buffer = gpu.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Instance Buffer"),
+            size: (4 * std::mem::size_of::<Instance>() * max_num_entities) as wgpu::BufferAddress,
+            usage: wgpu::BufferUsages::VERTEX | BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
 
-        let indices: &[u16] = &[
-            0, 1, 2, // First triangle
-            0, 2, 3, // Second triangle
-        ];
-
-        let quad_vertex_buffer = gpu
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(vertices),
-                usage: wgpu::BufferUsages::VERTEX,
-            });
-        let quad_index_buffer = gpu
+        let indices: &[u16] = &[0, 1, 2, 0, 2, 3];
+        let index_buffer = gpu
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Index Buffer"),
                 contents: bytemuck::cast_slice(indices),
                 usage: wgpu::BufferUsages::INDEX,
             });
-        let quad_num_indices = indices.len() as u32;
+        let num_indices = indices.len() as u32;
 
         let projection_bind_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Projection Bind Group"),
@@ -117,16 +90,30 @@ impl Renderer {
             camera,
 
             projection_uniform_buffer,
-            quad_vertex_buffer,
-            quad_index_buffer,
-            quad_num_indices,
-            projection_bind_group,
+            instance_buffer,
+            index_buffer,
 
+            max_num_entities,
+            num_indices,
+
+            projection_bind_group,
             render_pipeline: pipeline.render_pipeline,
         }
     }
 
-    pub fn render(&mut self) {
+    pub fn render(&mut self, instance_data: &[Instance]) {
+        if instance_data.len() > self.max_num_entities {
+            self.max_num_entities = instance_data.len() + 100;
+
+            self.instance_buffer = self.gpu.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("Instance Buffer"),
+                size: (4 * std::mem::size_of::<Instance>() * self.max_num_entities)
+                    as wgpu::BufferAddress,
+                usage: wgpu::BufferUsages::VERTEX | BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+        }
+
         match self.gpu.surface.get_current_texture() {
             Ok(output) => {
                 self.gpu.queue.write_buffer(
@@ -134,6 +121,14 @@ impl Renderer {
                     0,
                     bytemuck::cast_slice(self.camera.projection.as_slice().into()),
                 );
+
+                self.gpu.queue.write_buffer(
+                    &self.instance_buffer,
+                    0,
+                    bytemuck::cast_slice(instance_data),
+                );
+
+                let instances = instance_data.len() as u32;
 
                 let view = output
                     .texture
@@ -166,13 +161,12 @@ impl Renderer {
                     });
 
                     render_pass.set_pipeline(&self.render_pipeline);
-                    render_pass.set_index_buffer(
-                        self.quad_index_buffer.slice(..),
-                        wgpu::IndexFormat::Uint16,
-                    );
-                    render_pass.set_vertex_buffer(0, self.quad_vertex_buffer.slice(..));
                     render_pass.set_bind_group(0, &self.projection_bind_group, &[]);
-                    render_pass.draw_indexed(0..self.quad_num_indices, 0, 0..1);
+
+                    render_pass
+                        .set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+                    render_pass.set_vertex_buffer(0, self.instance_buffer.slice(..));
+                    render_pass.draw_indexed(0..self.num_indices, 0, 0..instances);
                 }
 
                 self.gpu.queue.submit(std::iter::once(encoder.finish()));

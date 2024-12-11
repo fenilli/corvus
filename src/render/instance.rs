@@ -2,18 +2,17 @@ use wgpu::vertex_attr_array;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Vertex {
+pub struct Instance {
     position: [f32; 2],
-    uv: [f32; 2],
+    scale: [f32; 2],
     color: [f32; 3],
 }
 
-#[allow(dead_code)]
-impl Vertex {
-    pub fn new(position: [f32; 2], uv: [f32; 2], color: [f32; 3]) -> Self {
+impl Instance {
+    pub fn new(position: [f32; 2], scale: [f32; 2], color: [f32; 3]) -> Self {
         Self {
             position,
-            uv,
+            scale,
             color,
         }
     }
@@ -24,7 +23,7 @@ impl Vertex {
 
         wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<Self>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
+            step_mode: wgpu::VertexStepMode::Instance,
             attributes: &ATTRIBUTES,
         }
     }

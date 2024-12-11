@@ -11,7 +11,7 @@ use super::{
 
 use crate::{
     ecs::{
-        components::{Sprite, Transform},
+        components::{Rectangle, Sprite, Transform},
         systems::render_system,
         Commands,
     },
@@ -25,12 +25,16 @@ impl Scene for Game {
     fn enter(&mut self, context: &mut AppContext) {
         println!("enter");
 
-        context.world.register::<Transform>();
-
         context.commands.schedule(move |world| {
             let player = world.spawn();
             world.insert(player, Sprite);
             world.insert(player, Transform::from_xy(100., 100.));
+            world.insert(player, Rectangle::new(100, 100));
+
+            let enemy = world.spawn();
+            world.insert(enemy, Sprite);
+            world.insert(enemy, Transform::from_xy(300., 300.));
+            world.insert(enemy, Rectangle::new(50, 50));
         });
     }
 
@@ -68,10 +72,15 @@ impl App {
         let mut scene_manager = SceneManager::new();
         scene_manager.change(Game);
 
+        let mut world = World::new();
+        world.register::<Sprite>();
+        world.register::<Transform>();
+        world.register::<Rectangle>();
+
         Self {
             input: Input::new(),
             timestep: Timestep::new(60),
-            world: World::new(),
+            world,
             commands: Commands::new(),
 
             asset_manager: AssetManager::new(),
@@ -88,9 +97,9 @@ impl App {
         match event {
             WindowEvent::RedrawRequested => {
                 let mut context = AppContext {
-                    asset_manager: &mut self.asset_manager,
+                    // asset_manager: &mut self.asset_manager,
                     commands: &mut self.commands,
-                    world: &mut self.world,
+                    // world: &mut self.world,
                 };
 
                 self.scene_manager.process(&mut context);

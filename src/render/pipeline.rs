@@ -1,6 +1,6 @@
 use wgpu::{BindGroupLayout, Device};
 
-use super::Vertex;
+use super::Instance;
 
 pub struct Pipeline {
     pub render_pipeline: wgpu::RenderPipeline,
@@ -16,7 +16,7 @@ impl Pipeline {
         let vertex_state = wgpu::VertexState {
             module: &shader_module,
             entry_point: Some("vs_main"),
-            buffers: &[Vertex::desc()],
+            buffers: &[Instance::desc()],
             compilation_options: Default::default(),
         };
 
