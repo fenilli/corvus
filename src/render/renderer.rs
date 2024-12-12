@@ -5,7 +5,7 @@ use winit::{dpi::PhysicalSize, window::Window};
 
 use crate::ecs::components::Camera;
 
-use super::{GpuContext, Instance, Pipeline};
+use super::{texture::Texture, GpuContext, Instance, Pipeline};
 
 pub struct Renderer {
     gpu: GpuContext,
@@ -20,6 +20,7 @@ pub struct Renderer {
     num_indices: u32,
 
     projection_bind_group: BindGroup,
+    texture_bind_group: BindGroup,
     render_pipeline: RenderPipeline,
 }
 
@@ -30,6 +31,8 @@ impl Renderer {
         let gpu = GpuContext::new(window);
         let size = gpu.window.inner_size();
         let camera = Camera::new(size.width, size.height);
+
+        let texture = Texture::new(&gpu.device, &gpu.queue, "assets/uv_test.png");
 
         let projection_bind_group_layout =
             gpu.device
@@ -47,7 +50,34 @@ impl Renderer {
                     }],
                 });
 
-        let pipeline = Pipeline::new(&gpu.device, &[&projection_bind_group_layout]);
+        let texture_bind_group_layout =
+            gpu.device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("Texture Bind Group Layout"),
+                    entries: &[
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 0,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                multisampled: false,
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 1,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                            count: None,
+                        },
+                    ],
+                });
+
+        let pipeline = Pipeline::new(
+            &gpu.device,
+            &[&projection_bind_group_layout, &texture_bind_group_layout],
+        );
 
         let projection_uniform_buffer = gpu.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Projection Uniform Buffer"),
@@ -84,6 +114,21 @@ impl Renderer {
             }],
         });
 
+        let texture_bind_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Texture Bind Group"),
+            layout: &texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&texture.sampler),
+                },
+            ],
+        });
+
         Self {
             gpu,
 
@@ -97,6 +142,7 @@ impl Renderer {
             num_indices,
 
             projection_bind_group,
+            texture_bind_group,
             render_pipeline: pipeline.render_pipeline,
         }
     }
@@ -162,6 +208,7 @@ impl Renderer {
 
                     render_pass.set_pipeline(&self.render_pipeline);
                     render_pass.set_bind_group(0, &self.projection_bind_group, &[]);
+                    render_pass.set_bind_group(1, &self.texture_bind_group, &[]);
 
                     render_pass
                         .set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);

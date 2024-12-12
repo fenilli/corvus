@@ -9,7 +9,6 @@ use super::{
 use crate::{
     ecs::{systems::render_system, Commands},
     render::Renderer,
-    resources::AssetManager,
     World,
 };
 
@@ -24,7 +23,6 @@ pub struct App {
     world: World,
     commands: Commands,
 
-    asset_manager: AssetManager,
     scene_manager: SceneManager,
 
     renderer: Renderer,
@@ -44,7 +42,6 @@ impl App {
             world: World::new(),
             commands: Commands::new(),
 
-            asset_manager: AssetManager::new(),
             scene_manager,
 
             renderer: Renderer::new(window.clone()),
