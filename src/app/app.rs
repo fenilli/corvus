@@ -1,54 +1,20 @@
 use std::sync::Arc;
 
-use winit::{event::WindowEvent, window::Window};
+use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 
 use super::{
-    context::AppContext,
-    input::Input,
-    scene::{Scene, SceneManager},
-    timestep::Timestep,
+    context::AppContext, input::Input, scene::SceneManager, scenes::game::Game, timestep::Timestep,
 };
 
 use crate::{
-    ecs::{
-        components::{Rectangle, Sprite, Transform},
-        systems::render_system,
-        Commands,
-    },
+    ecs::{systems::render_system, Commands},
     render::Renderer,
     resources::AssetManager,
     World,
 };
 
-pub struct Game;
-impl Scene for Game {
-    fn enter(&mut self, context: &mut AppContext) {
-        println!("enter");
-
-        context.commands.schedule(move |world| {
-            let player = world.spawn();
-            world.insert(player, Sprite);
-            world.insert(player, Transform::from_xy(100., 100.));
-            world.insert(player, Rectangle::new(100, 100));
-
-            let enemy = world.spawn();
-            world.insert(enemy, Sprite);
-            world.insert(enemy, Transform::from_xy(300., 300.));
-            world.insert(enemy, Rectangle::new(50, 50));
-        });
-    }
-
-    fn fixed_update(&mut self, _delta_time: f32, _context: &mut AppContext) {
-        // println!("fixed_update");
-    }
-
-    fn update(&mut self, _delta_time: f32, _context: &mut AppContext) {
-        // println!("update {}", delta_time);
-    }
-
-    fn exit(&mut self, _context: &mut AppContext) {
-        // println!("exit");
-    }
+pub struct SystemConfiguration {
+    pub window_size: PhysicalSize<u32>,
 }
 
 #[allow(dead_code)]
@@ -70,17 +36,12 @@ impl App {
         let window = Arc::new(window);
 
         let mut scene_manager = SceneManager::new();
-        scene_manager.change(Game);
-
-        let mut world = World::new();
-        world.register::<Sprite>();
-        world.register::<Transform>();
-        world.register::<Rectangle>();
+        scene_manager.change(Game::new());
 
         Self {
             input: Input::new(),
             timestep: Timestep::new(60),
-            world,
+            world: World::new(),
             commands: Commands::new(),
 
             asset_manager: AssetManager::new(),
@@ -97,9 +58,12 @@ impl App {
         match event {
             WindowEvent::RedrawRequested => {
                 let mut context = AppContext {
-                    // asset_manager: &mut self.asset_manager,
+                    system_configuration: SystemConfiguration {
+                        window_size: self.window.inner_size(),
+                    },
+                    input: &mut self.input,
                     commands: &mut self.commands,
-                    // world: &mut self.world,
+                    world: &mut self.world,
                 };
 
                 self.scene_manager.process(&mut context);

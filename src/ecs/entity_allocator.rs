@@ -4,6 +4,13 @@ pub struct Entity {
     pub generation: u32,
 }
 
+impl Entity {
+    pub const DANGLING: Self = Self {
+        id: usize::MAX,
+        generation: 0,
+    };
+}
+
 #[derive(Debug)]
 enum AllocatorEntry {
     Free(usize),
@@ -52,6 +59,11 @@ impl EntityAllocator {
             None => {
                 let generation = 0;
                 let id = self.entries.len();
+
+                if id == usize::MAX {
+                    panic!("Run out of space for entities.");
+                }
+
                 self.entries.push((AllocatorEntry::Occupied, generation));
                 self.free_head = id + 1;
                 Entity { id, generation }

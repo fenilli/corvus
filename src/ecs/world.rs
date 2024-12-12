@@ -6,8 +6,10 @@ use std::{
 
 use super::{
     component_vec::{AnyVec, ComponentVec},
-    entity_allocator::{Entity, EntityAllocator},
+    entity_allocator::EntityAllocator,
 };
+
+pub use super::entity_allocator::Entity;
 
 pub trait Component: Send + Sync + 'static {}
 impl<T: Send + Sync + 'static> Component for T {}

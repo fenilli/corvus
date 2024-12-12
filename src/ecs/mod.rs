@@ -6,4 +6,4 @@ pub mod systems;
 mod world;
 
 pub use commands::Commands;
-pub use world::World;
+pub use world::{Entity, World};
