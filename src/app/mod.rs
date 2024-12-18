@@ -1,8 +1,4 @@
 mod app;
-mod context;
-mod input;
-mod scene;
-pub mod scenes;
-mod timestep;
+mod scenes;
 
 pub use app::App;

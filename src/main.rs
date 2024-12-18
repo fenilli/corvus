@@ -46,10 +46,6 @@ impl ApplicationHandler for WinitApp {
         self.app = AppState::Running(App::new(window));
     }
 
-    fn exiting(&mut self, _: &winit::event_loop::ActiveEventLoop) {
-        self.app = AppState::Closing;
-    }
-
     fn window_event(
         &mut self,
         event_loop: &winit::event_loop::ActiveEventLoop,
@@ -62,7 +58,10 @@ impl ApplicationHandler for WinitApp {
 
         match app.window_event(event) {
             true => app.window().request_redraw(),
-            false => event_loop.exit(),
+            false => {
+                self.app = AppState::Closing;
+                event_loop.exit();
+            }
         };
     }
 }

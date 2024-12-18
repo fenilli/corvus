@@ -1,6 +1,7 @@
 use std::cell::{Ref, RefCell, RefMut};
 
-use super::world::Component;
+pub trait Component: 'static {}
+impl<T: 'static> Component for T {}
 
 pub struct ComponentVec<T> {
     components: Vec<Option<RefCell<T>>>,

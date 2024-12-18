@@ -7,7 +7,7 @@ use winit::{
 };
 
 #[derive(PartialEq, Eq, Debug)]
-pub enum InputState {
+enum InputState {
     Idle,
     Pressed,
     Held,
@@ -20,7 +20,6 @@ pub struct Input {
     cursor_position: PhysicalPosition<f64>,
 }
 
-#[allow(dead_code)]
 impl Input {
     pub fn new() -> Self {
         Self {
@@ -70,7 +69,7 @@ impl Input {
         map.get(key) == Some(value)
     }
 
-    pub fn start_step(&mut self, event: &WindowEvent) {
+    pub fn process(&mut self, event: &WindowEvent) {
         match event {
             WindowEvent::KeyboardInput { event, .. } => {
                 self.keyboard_input(event);
@@ -85,7 +84,7 @@ impl Input {
         }
     }
 
-    pub fn end_step(&mut self) {
+    pub fn cleanup(&mut self) {
         for input_state in self.key_states.values_mut() {
             if *input_state == InputState::Pressed {
                 *input_state = InputState::Held

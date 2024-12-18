@@ -1,9 +1,11 @@
-mod commands;
-mod component_vec;
 pub mod components;
-mod entity_allocator;
+pub mod resources;
 pub mod systems;
+
+mod component;
+mod entity_allocator;
+mod resource;
 mod world;
 
-pub use commands::Commands;
-pub use world::{Entity, World};
+pub use resource::Resources;
+pub use world::World;
