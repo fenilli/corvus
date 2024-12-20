@@ -1,12 +1,15 @@
+use glam::{Mat4, Vec2};
 use wgpu::util::DeviceExt;
 
-use super::{GraphicsDevice, Instance};
+use super::{vertex::Vertex, GraphicsDevice, Instance};
 
 pub struct QuadRenderer {
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     instance_buffer: wgpu::Buffer,
+    view_projection_uniform_buffer: wgpu::Buffer,
+    view_projection_bind_group: wgpu::BindGroup,
     instances_len: u32,
 }
 
@@ -19,12 +22,53 @@ impl QuadRenderer {
                 source: wgpu::ShaderSource::Wgsl(include_str!("shaders/quad.wgsl").into()),
             });
 
+        let view_projection_bind_group_layout =
+            graphics_device
+                .device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("View Projection"),
+                    entries: &[wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        count: None,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                    }],
+                });
+
+        let view_projection_uniform_buffer =
+            graphics_device
+                .device
+                .create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("View Projection Uniform Buffer"),
+                    size: std::mem::size_of::<Mat4>() as wgpu::BufferAddress,
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    mapped_at_creation: false,
+                });
+
+        let view_projection_bind_group =
+            graphics_device
+                .device
+                .create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("View Projection Bind Group"),
+                    layout: &view_projection_bind_group_layout,
+                    entries: &[wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::Buffer(
+                            view_projection_uniform_buffer.as_entire_buffer_binding(),
+                        ),
+                    }],
+                });
+
         let render_pipeline_layout =
             graphics_device
                 .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("Render Pipeline Layout"),
-                    bind_group_layouts: &[],
+                    bind_group_layouts: &[&view_projection_bind_group_layout],
                     push_constant_ranges: &[],
                 });
 
@@ -38,28 +82,7 @@ impl QuadRenderer {
                         module: &shader,
                         entry_point: Some("vs_main"),
                         compilation_options: wgpu::PipelineCompilationOptions::default(),
-                        buffers: &[
-                            wgpu::VertexBufferLayout {
-                                array_stride: std::mem::size_of::<[f32; 2]>()
-                                    as wgpu::BufferAddress,
-                                step_mode: wgpu::VertexStepMode::Vertex,
-                                attributes: &[wgpu::VertexAttribute {
-                                    offset: 0,
-                                    shader_location: 0,
-                                    format: wgpu::VertexFormat::Float32x2,
-                                }],
-                            },
-                            wgpu::VertexBufferLayout {
-                                array_stride: std::mem::size_of::<Instance>()
-                                    as wgpu::BufferAddress,
-                                step_mode: wgpu::VertexStepMode::Instance,
-                                attributes: &[wgpu::VertexAttribute {
-                                    offset: 0,
-                                    shader_location: 1,
-                                    format: wgpu::VertexFormat::Float32x2,
-                                }],
-                            },
-                        ],
+                        buffers: &[Vertex::desc(), Instance::desc()],
                     },
                     fragment: Some(wgpu::FragmentState {
                         module: &shader,
@@ -90,11 +113,11 @@ impl QuadRenderer {
                     cache: None,
                 });
 
-        let vertices: &[f32] = &[
-            -0.5, -0.5, // Bottom-left
-            0.5, -0.5, // Bottom-right
-            -0.5, 0.5, // Top-left
-            0.5, 0.5, // Top-right
+        let vertices: &[Vertex] = &[
+            Vertex::new(Vec2::new(-0.5, -0.5)),
+            Vertex::new(Vec2::new(0.5, -0.5)),
+            Vertex::new(Vec2::new(-0.5, 0.5)),
+            Vertex::new(Vec2::new(0.5, 0.5)),
         ];
 
         let indices: &[u16] = &[0, 1, 2, 2, 1, 3];
@@ -131,21 +154,34 @@ impl QuadRenderer {
             vertex_buffer,
             index_buffer,
             instance_buffer,
+            view_projection_uniform_buffer,
+            view_projection_bind_group,
             instances_len: 0,
         }
     }
 
-    pub fn prepare(&mut self, graphics_device: &GraphicsDevice, instances: &[Instance]) {
+    pub fn prepare(
+        &mut self,
+        graphics_device: &GraphicsDevice,
+        view_projection_matrix: Mat4,
+        instances: &[Instance],
+    ) {
         self.instances_len = instances.len() as u32;
         graphics_device.queue.write_buffer(
             &self.instance_buffer,
             0,
             bytemuck::cast_slice(&instances),
         );
+        graphics_device.queue.write_buffer(
+            &self.view_projection_uniform_buffer,
+            0,
+            bytemuck::bytes_of(&view_projection_matrix),
+        );
     }
 
     pub fn render(&mut self, render_pass: &mut wgpu::RenderPass) {
         render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.set_bind_group(0, &self.view_projection_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);

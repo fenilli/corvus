@@ -8,6 +8,7 @@ pub struct GraphicsDevice {
     pub surface_config: wgpu::SurfaceConfiguration,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
+    pub window: Arc<winit::window::Window>,
 }
 
 impl GraphicsDevice {
@@ -44,6 +45,7 @@ impl GraphicsDevice {
             surface_config,
             device,
             queue,
+            window,
         }
     }
 

@@ -1,9 +1,11 @@
 use std::sync::Arc;
 
+use glam::Vec2;
+
 use crate::{ecs::World, render::GraphicsDevice};
 
 use super::{
-    components::{Quad, Transform},
+    components::{Camera, Quad, Transform},
     frame_clock::FrameClock,
     input::Input,
     systems::QuadRendererSystem,
@@ -24,14 +26,33 @@ pub struct App {
 impl App {
     pub fn new(window: winit::window::Window) -> Self {
         let window = Arc::new(window);
+        let window_size = window.inner_size();
         let input = Input::new();
         let mut world = World::new();
+
+        // let camera = world.spawn();
+        // world.insert_component(
+        //     camera,
+        //     Camera {
+        //         width: window_size.width,
+        //         height: window_size.height,
+        //         zoom: 1.0,
+        //     },
+        // );
+        // world.insert_component(
+        //     camera,
+        //     Transform {
+        //         position: Vec2::new(0.0, 0.0),
+        //         scale: Vec2::new(1.0, 1.0),
+        //     },
+        // );
 
         let player = world.spawn();
         world.insert_component(
             player,
             Transform {
-                position: [0.0, 0.0],
+                position: Vec2::new(0.0, 0.0),
+                scale: Vec2::new(1.0, 1.0),
             },
         );
         world.insert_component(

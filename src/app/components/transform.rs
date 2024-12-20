@@ -1,3 +1,6 @@
+use glam::Vec2;
+
 pub struct Transform {
-    pub position: [f32; 2],
+    pub position: Vec2,
+    pub scale: Vec2,
 }
