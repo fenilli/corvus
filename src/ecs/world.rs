@@ -38,6 +38,8 @@ impl World {
             .entry(TypeId::of::<T>())
             .or_insert(Box::new(ComponentVec::<T>::new()));
 
+        any_vec.default();
+
         let Some(storage) = any_vec.as_any_mut().downcast_mut::<ComponentVec<T>>() else {
             return;
         };

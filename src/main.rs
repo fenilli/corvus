@@ -1,8 +1,5 @@
 use winit::{
-    application::ApplicationHandler,
-    dpi::PhysicalSize,
-    event_loop::{ControlFlow, EventLoop},
-    window::Window,
+    application::ApplicationHandler, dpi::PhysicalSize, event_loop::EventLoop, window::Window,
 };
 
 use corvus::App;
@@ -15,7 +12,6 @@ struct AppDescriptor {
 enum AppState {
     Initializing(AppDescriptor),
     Running(App),
-    Closing,
 }
 
 struct WinitApp {
@@ -52,23 +48,18 @@ impl ApplicationHandler for WinitApp {
         _: winit::window::WindowId,
         event: winit::event::WindowEvent,
     ) {
-        let AppState::Running(app) = &mut self.app else {
+        if event_loop.exiting() {
             return;
-        };
+        }
 
-        match app.window_event(event) {
-            true => app.window().request_redraw(),
-            false => {
-                self.app = AppState::Closing;
-                event_loop.exit();
-            }
+        if let AppState::Running(app) = &mut self.app {
+            app.window_event(event, event_loop);
         };
     }
 }
 
 fn main() {
     let event_loop = EventLoop::new().unwrap();
-    event_loop.set_control_flow(ControlFlow::Poll);
     let mut app = WinitApp::new(AppDescriptor {
         title: "Corvus",
         size: PhysicalSize::new(800, 600),
