@@ -39,29 +39,32 @@ impl QuadRendererSystem {
             ));
         }
 
-        let projection_matrix = world
+        let view_projection_matrix = world
             .entities()
             .find_map(|entity| {
                 if let Some(camera) = world.get_component::<Camera>(entity) {
-                    Some(camera.projection_matrix())
+                    Some(camera.view_projection_matrix())
                 } else {
                     None
                 }
             })
             .unwrap_or_else(|| {
                 let window_size = graphics_device.window.inner_size();
-                Mat4::orthographic_rh(
+                Mat4::orthographic_rh_gl(
                     0.0,
                     window_size.width as f32,
                     window_size.height as f32,
                     0.0,
                     -1.0,
                     1.0,
-                )
+                ) * Mat4::from_translation(Vec3::new(0.0, 0.0, 0.0))
             });
 
-        self.quad_renderer
-            .prepare(graphics_device, projection_matrix, instances.as_slice());
+        self.quad_renderer.prepare(
+            graphics_device,
+            view_projection_matrix,
+            instances.as_slice(),
+        );
     }
 
     pub fn render(&mut self, render_pass: &mut wgpu::RenderPass) {

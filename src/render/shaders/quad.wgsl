@@ -11,7 +11,7 @@ struct VertexOutput {
 };
 
 @group(0) @binding(0)
-var<uniform> projection: mat4x4<f32>;
+var<uniform> view_projection_matrix: mat4x4<f32>;
 
 @vertex
 fn vs_main(input: VertexInput) -> VertexOutput {
@@ -20,7 +20,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     let scaled_position = input.position * input.instance_scale;
     let world_position = scaled_position + input.instance_position;
 
-    output.clip_position = projection * vec4<f32>(world_position, 0.0, 1.0);
+    output.clip_position = view_projection_matrix * vec4<f32>(world_position, 0.0, 1.0);
     output.frag_color = vec4<f32>(input.color, 1.0);
 
     return output;

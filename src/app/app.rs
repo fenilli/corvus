@@ -38,6 +38,7 @@ impl App {
         world.insert_component(
             camera,
             Camera {
+                position: Vec2::new(0.0, 0.0),
                 width: window_size.width,
                 height: window_size.height,
                 zoom: 1.0,

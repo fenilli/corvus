@@ -8,8 +8,8 @@ pub struct QuadRenderer {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     instance_buffer: wgpu::Buffer,
-    projection_uniform_buffer: wgpu::Buffer,
-    projection_bind_group: wgpu::BindGroup,
+    view_projection_uniform_buffer: wgpu::Buffer,
+    view_projection_bind_group: wgpu::BindGroup,
     index_len: u32,
     instances_len: u32,
 }
@@ -40,7 +40,7 @@ impl QuadRenderer {
                     }],
                 });
 
-        let projection_uniform_buffer =
+        let view_projection_uniform_buffer =
             graphics_device
                 .device
                 .create_buffer(&wgpu::BufferDescriptor {
@@ -50,7 +50,7 @@ impl QuadRenderer {
                     mapped_at_creation: false,
                 });
 
-        let projection_bind_group =
+        let view_projection_bind_group =
             graphics_device
                 .device
                 .create_bind_group(&wgpu::BindGroupDescriptor {
@@ -59,7 +59,7 @@ impl QuadRenderer {
                     entries: &[wgpu::BindGroupEntry {
                         binding: 0,
                         resource: wgpu::BindingResource::Buffer(
-                            projection_uniform_buffer.as_entire_buffer_binding(),
+                            view_projection_uniform_buffer.as_entire_buffer_binding(),
                         ),
                     }],
                 });
@@ -155,8 +155,8 @@ impl QuadRenderer {
             vertex_buffer,
             index_buffer,
             instance_buffer,
-            projection_uniform_buffer,
-            projection_bind_group,
+            view_projection_uniform_buffer,
+            view_projection_bind_group,
             index_len: indices.len() as u32,
             instances_len: 0,
         }
@@ -165,7 +165,7 @@ impl QuadRenderer {
     pub fn prepare(
         &mut self,
         graphics_device: &GraphicsDevice,
-        projection_matrix: Mat4,
+        view_projection_matrix: Mat4,
         instances: &[Instance],
     ) {
         self.instances_len = instances.len() as u32;
@@ -175,15 +175,15 @@ impl QuadRenderer {
             bytemuck::cast_slice(&instances),
         );
         graphics_device.queue.write_buffer(
-            &self.projection_uniform_buffer,
+            &self.view_projection_uniform_buffer,
             0,
-            bytemuck::bytes_of(&projection_matrix),
+            bytemuck::bytes_of(&view_projection_matrix),
         );
     }
 
     pub fn render(&mut self, render_pass: &mut wgpu::RenderPass) {
         render_pass.set_pipeline(&self.render_pipeline);
-        render_pass.set_bind_group(0, &self.projection_bind_group, &[]);
+        render_pass.set_bind_group(0, &self.view_projection_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
