@@ -28,17 +28,28 @@ impl World {
         self.entity_allocator.entities()
     }
 
+    pub fn register_component<T: Component>(&mut self) {
+        let type_id = TypeId::of::<T>();
+
+        if self.components.contains_key(&type_id) {
+            panic!(
+                "Component \"{}\" was already registered!",
+                std::any::type_name::<T>()
+            );
+        }
+
+        self.components
+            .insert(type_id, Box::new(ComponentVec::<T>::new()));
+    }
+
     pub fn insert_component<T: Component>(&mut self, entity: Entity, component: T) {
         let Some(index) = self.entity_allocator.find_entity_index(entity) else {
             return;
         };
 
-        let any_vec = self
-            .components
-            .entry(TypeId::of::<T>())
-            .or_insert(Box::new(ComponentVec::<T>::new()));
-
-        any_vec.default();
+        let Some(any_vec) = self.components.get_mut(&TypeId::of::<T>()) else {
+            return;
+        };
 
         let Some(storage) = any_vec.as_any_mut().downcast_mut::<ComponentVec<T>>() else {
             return;

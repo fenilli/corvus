@@ -1,4 +1,3 @@
-use glam::Vec2;
 use wgpu::vertex_attr_array;
 
 #[repr(C)]
@@ -8,10 +7,8 @@ pub struct Vertex {
 }
 
 impl Vertex {
-    pub fn new(position: Vec2) -> Self {
-        Self {
-            position: position.into(),
-        }
+    pub fn new(position: [f32; 2]) -> Self {
+        Self { position }
     }
 
     pub fn desc() -> wgpu::VertexBufferLayout<'static> {

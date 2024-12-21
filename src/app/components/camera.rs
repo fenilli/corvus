@@ -1,4 +1,4 @@
-use glam::{Mat4, Vec2, Vec3};
+use glam::Mat4;
 
 pub struct Camera {
     pub width: u32,
@@ -7,7 +7,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    fn projection_matrix(&self) -> Mat4 {
+    pub fn projection_matrix(&self) -> Mat4 {
         Mat4::orthographic_rh(
             0.0,
             self.width as f32 / self.zoom,
@@ -16,9 +16,5 @@ impl Camera {
             -1.0,
             1.0,
         )
-    }
-
-    pub fn view_projection_matrix(&self, position: Vec2) -> Mat4 {
-        self.projection_matrix() * Mat4::from_translation(Vec3::new(-position.x, -position.y, 0.0))
     }
 }

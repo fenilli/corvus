@@ -30,28 +30,25 @@ impl App {
         let input = Input::new();
         let mut world = World::new();
 
-        // let camera = world.spawn();
-        // world.insert_component(
-        //     camera,
-        //     Camera {
-        //         width: window_size.width,
-        //         height: window_size.height,
-        //         zoom: 1.0,
-        //     },
-        // );
-        // world.insert_component(
-        //     camera,
-        //     Transform {
-        //         position: Vec2::new(0.0, 0.0),
-        //         scale: Vec2::new(1.0, 1.0),
-        //     },
-        // );
+        world.register_component::<Camera>();
+        world.register_component::<Transform>();
+        world.register_component::<Quad>();
+
+        let camera = world.spawn();
+        world.insert_component(
+            camera,
+            Camera {
+                width: window_size.width,
+                height: window_size.height,
+                zoom: 1.0,
+            },
+        );
 
         let player = world.spawn();
         world.insert_component(
             player,
             Transform {
-                position: Vec2::new(0.0, 0.0),
+                position: Vec2::new(100.0, 100.0),
                 scale: Vec2::new(1.0, 1.0),
             },
         );
@@ -93,10 +90,10 @@ impl App {
                 let (fixed_deltas, delta_time) = self.frame_clock.update();
 
                 for delta_time in fixed_deltas {
-                    println!("FDT: {}", delta_time);
+                    // println!("FDT: {}", delta_time);
                 }
 
-                println!("DT: {}", delta_time);
+                // println!("DT: {}", delta_time);
 
                 match self.graphics_device.surface.get_current_texture() {
                     Ok(frame) => {
