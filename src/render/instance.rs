@@ -8,15 +8,6 @@ pub struct Instance {
     size: [f32; 2],
 }
 
-impl std::fmt::Display for Instance {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Intance")
-            .field("position", &self.position)
-            .field("size", &self.size)
-            .finish()
-    }
-}
-
 impl Instance {
     pub fn new(position: Vec2, size: Vec2) -> Self {
         Self {
@@ -27,7 +18,7 @@ impl Instance {
 
     pub fn desc() -> wgpu::VertexBufferLayout<'static> {
         const ATTRIBUTES: [wgpu::VertexAttribute; 2] =
-            vertex_attr_array![1 => Float32x2, 2 => Float32x2];
+            vertex_attr_array![2 => Float32x2, 3 => Float32x2];
 
         wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<Self>() as wgpu::BufferAddress,

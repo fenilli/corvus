@@ -99,7 +99,7 @@ impl QuadRenderer {
                         topology: wgpu::PrimitiveTopology::TriangleList,
                         strip_index_format: None,
                         front_face: wgpu::FrontFace::Ccw,
-                        cull_mode: None,
+                        cull_mode: Some(wgpu::Face::Back),
                         unclipped_depth: false,
                         polygon_mode: wgpu::PolygonMode::Fill,
                         conservative: false,
@@ -115,10 +115,10 @@ impl QuadRenderer {
                 });
 
         let vertices: &[Vertex; 4] = &[
-            Vertex::new([-0.5, -0.5]),
-            Vertex::new([0.5, -0.5]),
-            Vertex::new([0.5, 0.5]),
-            Vertex::new([-0.5, 0.5]),
+            Vertex::new([-0.5, 0.5], [1.0, 1.0, 1.0]),
+            Vertex::new([0.5, 0.5], [0.0, 0.0, 1.0]),
+            Vertex::new([0.5, -0.5], [0.0, 1.0, 0.0]),
+            Vertex::new([-0.5, -0.5], [1.0, 0.0, 0.0]),
         ];
 
         let vertex_buffer =
