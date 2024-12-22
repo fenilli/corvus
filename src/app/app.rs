@@ -1,14 +1,12 @@
 use std::sync::Arc;
 
-use glam::Vec2;
-
 use crate::{ecs::World, render::GraphicsDevice};
 
 use super::{
     components::{Camera, Quad, Transform},
     frame_clock::FrameClock,
     input::Input,
-    systems::QuadRendererSystem,
+    systems::{CameraRendererSystem, QuadRendererSystem},
 };
 
 pub struct App {
@@ -18,6 +16,7 @@ pub struct App {
     frame_clock: FrameClock,
     graphics_device: GraphicsDevice,
 
+    camera_renderer_system: CameraRendererSystem,
     quad_render_system: QuadRendererSystem,
 
     window: Arc<winit::window::Window>,
@@ -26,7 +25,6 @@ pub struct App {
 impl App {
     pub fn new(window: winit::window::Window) -> Self {
         let window = Arc::new(window);
-        let window_size = window.inner_size();
         let input = Input::new();
         let mut world = World::new();
 
@@ -37,20 +35,15 @@ impl App {
         let camera = world.spawn();
         world.insert_component(
             camera,
-            Camera {
-                position: Vec2::new(0.0, 0.0),
-                width: window_size.width,
-                height: window_size.height,
-                zoom: 1.0,
-            },
+            Camera::new(glam::Vec3::new(0.0, 0.0, 0.0), window.inner_size(), 1.0),
         );
 
         let player = world.spawn();
         world.insert_component(
             player,
             Transform {
-                position: Vec2::new(100.0, 100.0),
-                scale: Vec2::new(1.0, 1.0),
+                position: glam::Vec2::new(100.0, 100.0),
+                scale: glam::Vec2::new(1.0, 1.0),
             },
         );
         world.insert_component(
@@ -64,7 +57,9 @@ impl App {
         let frame_clock = FrameClock::new(60);
         let graphics_device = GraphicsDevice::new(window.clone());
 
-        let quad_render_system = QuadRendererSystem::new(&graphics_device);
+        let camera_renderer_system = CameraRendererSystem::new(&graphics_device);
+        let quad_render_system =
+            QuadRendererSystem::new(&graphics_device, &[camera_renderer_system.binding()]);
 
         Self {
             input,
@@ -73,6 +68,7 @@ impl App {
             frame_clock,
             graphics_device,
 
+            camera_renderer_system,
             quad_render_system,
 
             window,
@@ -107,6 +103,8 @@ impl App {
                             .device
                             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
 
+                        self.camera_renderer_system
+                            .prepare(&self.world, &self.graphics_device);
                         self.quad_render_system
                             .prepare(&self.world, &self.graphics_device);
 
@@ -130,6 +128,7 @@ impl App {
                                     ..Default::default()
                                 });
 
+                            self.camera_renderer_system.render(&mut render_pass);
                             self.quad_render_system.render(&mut render_pass);
                         }
 
