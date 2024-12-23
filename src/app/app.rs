@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{ecs::World, render::GraphicsDevice};
+use crate::{assets::AssetLoader, ecs::World, render::GraphicsDevice};
 
 use super::{
     components::{Camera, Quad, Transform},
@@ -10,6 +10,7 @@ use super::{
 };
 
 pub struct App {
+    asset_loader: AssetLoader,
     input: Input,
     world: World,
 
@@ -25,6 +26,16 @@ pub struct App {
 impl App {
     pub fn new(window: winit::window::Window) -> Self {
         let window = Arc::new(window);
+
+        let mut asset_loader = AssetLoader::new();
+        let handle = asset_loader
+            .load_texture("./assets/uv_test.png")
+            .expect("To exist this asset");
+
+        if let Some(texture) = asset_loader.get_texture(handle) {
+            println!("Asset: {:?}", texture.data());
+        }
+
         let input = Input::new();
         let mut world = World::new();
 
@@ -59,6 +70,7 @@ impl App {
             QuadRendererSystem::new(&graphics_device, &[camera_renderer_system.binding()]);
 
         Self {
+            asset_loader,
             input,
             world,
 
