@@ -17,7 +17,7 @@ impl Camera {
     }
 
     fn camera_to_projection(&self) -> Mat4 {
-        Mat4::orthographic_rh_gl(
+        Mat4::orthographic_rh(
             0.0,
             self.viewport.width as f32 / self.zoom,
             self.viewport.height as f32 / self.zoom,

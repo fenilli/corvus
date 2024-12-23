@@ -41,10 +41,7 @@ impl App {
         let player = world.spawn();
         world.insert_component(
             player,
-            Transform {
-                position: glam::Vec2::new(100.0, 100.0),
-                scale: glam::Vec2::new(1.0, 1.0),
-            },
+            Transform::new(glam::Vec3::new(100.0, 100.0, 0.0), 0.0, glam::Vec3::ONE),
         );
         world.insert_component(
             player,

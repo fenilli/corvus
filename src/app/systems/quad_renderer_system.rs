@@ -32,11 +32,13 @@ impl QuadRendererSystem {
             Some((entity, transform, quad))
         }) {
             instances.push(Instance::new(
-                transform.position,
-                glam::Vec2::new(
-                    quad.width as f32 * transform.scale.x,
-                    quad.height as f32 * transform.scale.y,
-                ),
+                transform.0
+                    * glam::Mat4::from_scale(glam::Vec3::new(
+                        quad.width as f32,
+                        quad.height as f32,
+                        1.0,
+                    )),
+                [1.0, 0.0, 0.0],
             ));
         }
 

@@ -1,24 +1,22 @@
-use glam::Vec2;
 use wgpu::vertex_attr_array;
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Instance {
-    position: [f32; 2],
-    size: [f32; 2],
+    transform: [[f32; 4]; 4],
+    color: [f32; 3],
 }
 
 impl Instance {
-    pub fn new(position: Vec2, size: Vec2) -> Self {
+    pub fn new(transform: glam::Mat4, color: [f32; 3]) -> Self {
         Self {
-            position: position.into(),
-            size: size.into(),
+            transform: transform.to_cols_array_2d(),
+            color,
         }
     }
 
     pub fn desc() -> wgpu::VertexBufferLayout<'static> {
-        const ATTRIBUTES: [wgpu::VertexAttribute; 2] =
-            vertex_attr_array![2 => Float32x2, 3 => Float32x2];
+        const ATTRIBUTES: [wgpu::VertexAttribute; 5] = vertex_attr_array![2 => Float32x4, 3 => Float32x4, 4 => Float32x4, 5 => Float32x4, 6 => Float32x3];
 
         wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<Self>() as wgpu::BufferAddress,
