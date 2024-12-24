@@ -1,5 +1,5 @@
 mod camera_renderer;
-mod quad_renderer;
+mod sprite_renderer;
 
 pub use camera_renderer::CameraRenderer;
-pub use quad_renderer::QuadRenderer;
+pub use sprite_renderer::SpriteRenderer;

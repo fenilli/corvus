@@ -3,10 +3,11 @@ use std::sync::Arc;
 use crate::{assets::AssetLoader, ecs::World, render::GraphicsDevice};
 
 use super::{
-    components::{Camera, Quad, Transform},
+    color::Color,
+    components::{Camera, Label, Sprite, Transform},
     frame_clock::FrameClock,
     input::Input,
-    systems::{CameraRendererSystem, QuadRendererSystem},
+    systems::{CameraRendererSystem, SpriteRendererSystem},
 };
 
 pub struct App {
@@ -18,7 +19,7 @@ pub struct App {
     graphics_device: GraphicsDevice,
 
     camera_renderer_system: CameraRendererSystem,
-    quad_render_system: QuadRendererSystem,
+    sprite_render_system: SpriteRendererSystem,
 
     window: Arc<winit::window::Window>,
 }
@@ -27,21 +28,10 @@ impl App {
     pub fn new(window: winit::window::Window) -> Self {
         let window = Arc::new(window);
 
-        let mut asset_loader = AssetLoader::new();
-        let handle = asset_loader
-            .load_texture("./assets/uv_test.png")
-            .expect("To exist this asset");
-
-        if let Some(texture) = asset_loader.get_texture(handle) {
-            println!("Asset: {:?}", texture.data());
-        }
+        let mut asset_loader = App::load_all_assets();
 
         let input = Input::new();
-        let mut world = World::new();
-
-        world.register_component::<Camera>();
-        world.register_component::<Transform>();
-        world.register_component::<Quad>();
+        let mut world = App::register_all_components();
 
         let camera = world.spawn();
         world.insert_component(
@@ -50,24 +40,26 @@ impl App {
         );
 
         let player = world.spawn();
+        world.insert_component(player, Label::new("Player"));
         world.insert_component(
             player,
             Transform::new(glam::Vec3::new(100.0, 100.0, 0.0), 0.0, glam::Vec3::ONE),
         );
         world.insert_component(
             player,
-            Quad {
-                height: 100,
-                width: 100,
-            },
+            Sprite::new(
+                asset_loader.load_texture("./assets/uv_test.png"),
+                Color::WHITE,
+                None,
+            ),
         );
 
         let frame_clock = FrameClock::new(60);
         let graphics_device = GraphicsDevice::new(window.clone());
 
         let camera_renderer_system = CameraRendererSystem::new(&graphics_device);
-        let quad_render_system =
-            QuadRendererSystem::new(&graphics_device, &[camera_renderer_system.binding()]);
+        let sprite_render_system =
+            SpriteRendererSystem::new(&graphics_device, camera_renderer_system.binding());
 
         Self {
             asset_loader,
@@ -78,10 +70,28 @@ impl App {
             graphics_device,
 
             camera_renderer_system,
-            quad_render_system,
+            sprite_render_system,
 
             window,
         }
+    }
+
+    fn load_all_assets() -> AssetLoader {
+        let mut asset_loader = AssetLoader::new();
+        asset_loader.load_texture("./assets/uv_test.png");
+
+        asset_loader
+    }
+
+    fn register_all_components() -> World {
+        let mut world = World::new();
+
+        world.register_component::<Label>();
+        world.register_component::<Camera>();
+        world.register_component::<Transform>();
+        world.register_component::<Sprite>();
+
+        world
     }
 
     pub fn window_event(
@@ -114,8 +124,6 @@ impl App {
 
                         self.camera_renderer_system
                             .prepare(&self.world, &self.graphics_device);
-                        self.quad_render_system
-                            .prepare(&self.world, &self.graphics_device);
 
                         {
                             let mut render_pass =
@@ -138,7 +146,12 @@ impl App {
                                 });
 
                             self.camera_renderer_system.render(&mut render_pass);
-                            self.quad_render_system.render(&mut render_pass);
+                            self.sprite_render_system.render(
+                                &mut self.world,
+                                &self.asset_loader,
+                                &self.graphics_device,
+                                &mut render_pass,
+                            );
                         }
 
                         self.graphics_device

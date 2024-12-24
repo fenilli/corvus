@@ -11,19 +11,16 @@ impl AssetLoader {
         }
     }
 
-    pub fn load_texture(
-        &mut self,
-        path: &'static str,
-    ) -> Result<Asset<Texture>, image::ImageError> {
+    pub fn load_texture(&mut self, path: &'static str) -> Asset<Texture> {
         let handle = Asset::<Texture>::new(path);
 
         if self.textures.contains_key(&handle) {
-            return Ok(handle);
+            return handle;
         }
 
-        self.textures.insert(handle, Texture::new(path)?);
+        self.textures.insert(handle, Texture::new(path).unwrap());
 
-        Ok(handle)
+        handle
     }
 
     pub fn get_texture(&self, handle: Asset<Texture>) -> Option<&Texture> {

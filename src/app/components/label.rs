@@ -1,7 +1,7 @@
-pub struct Label(pub String);
+pub struct Label(pub &'static str);
 
 impl Label {
-    pub fn new(label: String) -> Self {
+    pub fn new(label: &'static str) -> Self {
         Self(label)
     }
 }

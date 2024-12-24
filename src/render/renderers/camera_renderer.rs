@@ -11,7 +11,7 @@ impl CameraRenderer {
         let world_to_projection_bind_group_layout = graphics_device
             .device
             .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("View Projection"),
+                label: Some("World to Projection Bind Group Layout"),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     count: None,
@@ -28,7 +28,7 @@ impl CameraRenderer {
             graphics_device
                 .device
                 .create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("View Projection Uniform Buffer"),
+                    label: Some("World to Projection Uniform Buffer"),
                     size: std::mem::size_of::<glam::Mat4>() as wgpu::BufferAddress,
                     usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                     mapped_at_creation: false,
@@ -38,7 +38,7 @@ impl CameraRenderer {
             graphics_device
                 .device
                 .create_bind_group(&wgpu::BindGroupDescriptor {
-                    label: Some("View Projection Bind Group"),
+                    label: Some("World to Projection Bind Group"),
                     layout: &world_to_projection_bind_group_layout,
                     entries: &[wgpu::BindGroupEntry {
                         binding: 0,
