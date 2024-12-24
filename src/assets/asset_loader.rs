@@ -23,7 +23,7 @@ impl AssetLoader {
         handle
     }
 
-    pub fn get_texture(&self, handle: Asset<Texture>) -> Option<&Texture> {
-        self.textures.get(&handle)
+    pub fn get_textures(&self) -> std::collections::hash_map::Iter<'_, Asset<Texture>, Texture> {
+        self.textures.iter()
     }
 }

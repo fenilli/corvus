@@ -3,11 +3,9 @@ use std::sync::Arc;
 use crate::{assets::AssetLoader, ecs::World, render::GraphicsDevice};
 
 use super::{
-    color::Color,
     components::{Camera, Label, Sprite, Transform},
     frame_clock::FrameClock,
     input::Input,
-    systems::{CameraRendererSystem, SpriteRendererSystem},
 };
 
 pub struct App {
@@ -18,48 +16,19 @@ pub struct App {
     frame_clock: FrameClock,
     graphics_device: GraphicsDevice,
 
-    camera_renderer_system: CameraRendererSystem,
-    sprite_render_system: SpriteRendererSystem,
-
     window: Arc<winit::window::Window>,
 }
 
 impl App {
     pub fn new(window: winit::window::Window) -> Self {
         let window = Arc::new(window);
-
-        let mut asset_loader = App::load_all_assets();
-
-        let input = Input::new();
-        let mut world = App::register_all_components();
-
-        let camera = world.spawn();
-        world.insert_component(
-            camera,
-            Camera::new(glam::Vec3::new(0.0, 0.0, 0.0), window.inner_size(), 1.0),
-        );
-
-        let player = world.spawn();
-        world.insert_component(player, Label::new("Player"));
-        world.insert_component(
-            player,
-            Transform::new(glam::Vec3::new(100.0, 100.0, 0.0), 0.0, glam::Vec3::ONE),
-        );
-        world.insert_component(
-            player,
-            Sprite::new(
-                asset_loader.load_texture("./assets/uv_test.png"),
-                Color::WHITE,
-                None,
-            ),
-        );
-
-        let frame_clock = FrameClock::new(60);
         let graphics_device = GraphicsDevice::new(window.clone());
 
-        let camera_renderer_system = CameraRendererSystem::new(&graphics_device);
-        let sprite_render_system =
-            SpriteRendererSystem::new(&graphics_device, camera_renderer_system.binding());
+        let asset_loader = App::load_all_assets();
+        let world = App::register_all_components();
+
+        let frame_clock = FrameClock::new(60);
+        let input = Input::new();
 
         Self {
             asset_loader,
@@ -68,9 +37,6 @@ impl App {
 
             frame_clock,
             graphics_device,
-
-            camera_renderer_system,
-            sprite_render_system,
 
             window,
         }
@@ -122,9 +88,6 @@ impl App {
                             .device
                             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
 
-                        self.camera_renderer_system
-                            .prepare(&self.world, &self.graphics_device);
-
                         {
                             let mut render_pass =
                                 encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -144,14 +107,6 @@ impl App {
                                     })],
                                     ..Default::default()
                                 });
-
-                            self.camera_renderer_system.render(&mut render_pass);
-                            self.sprite_render_system.render(
-                                &mut self.world,
-                                &self.asset_loader,
-                                &self.graphics_device,
-                                &mut render_pass,
-                            );
                         }
 
                         self.graphics_device
