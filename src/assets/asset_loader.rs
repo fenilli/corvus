@@ -2,23 +2,27 @@ use super::{texture::Texture, Asset};
 
 pub struct AssetLoader {
     textures: std::collections::HashMap<Asset<Texture>, Texture>,
+    next: u32,
 }
 
 impl AssetLoader {
     pub fn new() -> Self {
         Self {
             textures: std::collections::HashMap::new(),
+            next: 0,
         }
     }
 
     pub fn load_texture(&mut self, path: &'static str) -> Asset<Texture> {
-        let handle = Asset::<Texture>::new(self.textures.len() as i32, path);
+        let mut handle = Asset::<Texture>::new(path);
 
         if self.textures.contains_key(&handle) {
             return handle;
         }
 
+        handle.index = self.next;
         self.textures.insert(handle, Texture::new(path).unwrap());
+        self.next += 1;
 
         handle
     }

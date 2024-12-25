@@ -1,7 +1,7 @@
 use wgpu::include_wgsl;
 
 use crate::{
-    app::components::{Label, Sprite, Transform},
+    app::components::{Sprite, Transform},
     ecs::World,
 };
 
@@ -26,7 +26,7 @@ impl SpriteRenderer {
             .create_buffer(&wgpu::BufferDescriptor {
                 label: Some("Sprite Vertex Buffer"),
                 size: (4 * std::mem::size_of::<Vertex>() * 1024) as wgpu::BufferAddress,
-                usage: wgpu::BufferUsages::VERTEX,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             });
 
@@ -35,7 +35,7 @@ impl SpriteRenderer {
             .create_buffer(&wgpu::BufferDescriptor {
                 label: Some("Sprite Index Buffer"),
                 size: (6 * std::mem::size_of::<u16>() * 1024) as wgpu::BufferAddress,
-                usage: wgpu::BufferUsages::INDEX,
+                usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             });
 
@@ -154,49 +154,55 @@ impl SpriteRenderer {
         let mut index_data: Vec<u16> = Vec::new();
         let mut index_offset: u16 = 0;
 
-        for (entity, transform, sprite) in world.entities().filter_map(|entity| {
+        for (transform, sprite) in world.entities().filter_map(|entity| {
             match (
                 world.get_component::<Transform>(entity),
                 world.get_component::<Sprite>(entity),
             ) {
-                (Some(transform), Some(sprite)) => Some((entity, transform, sprite)),
+                (Some(transform), Some(sprite)) => Some((transform, sprite)),
                 _ => None,
             }
         }) {
-            println!("Entity Label: {:?}", world.get_component::<Label>(entity));
-
             let local_vertices = vec![
                 Vertex::new(
-                    transform
-                        .0
-                        .transform_point3(glam::Vec3::from_slice(&[-1.0, -1.0, 0.0]))
-                        .to_array(),
-                    [0.0, 1.0],
-                    sprite.texture_handle.id(),
-                ),
-                Vertex::new(
-                    transform
-                        .0
-                        .transform_point3(glam::Vec3::from_slice(&[-1.0, 1.0, 0.0]))
-                        .to_array(),
+                    [-1.0, 1.0, 1.0],
+                    // transform
+                    //     .0
+                    //     .transform_point3(glam::Vec3::from_slice(&[-0.5, 0.5, 1.0]))
+                    //     .to_array(),
+                    sprite.color.into(),
                     [0.0, 0.0],
-                    sprite.texture_handle.id(),
+                    sprite.texture_handle,
                 ),
                 Vertex::new(
-                    transform
-                        .0
-                        .transform_point3(glam::Vec3::from_slice(&[1.0, 1.0, 0.0]))
-                        .to_array(),
-                    [1.0, 0.0],
-                    sprite.texture_handle.id(),
+                    [-1.0, -1.0, 1.0],
+                    // transform
+                    //     .0
+                    //     .transform_point3(glam::Vec3::from_slice(&[0.5, 0.5, 1.0]))
+                    //     .to_array(),
+                    sprite.color.into(),
+                    [0.0, 1.0],
+                    sprite.texture_handle,
                 ),
                 Vertex::new(
-                    transform
-                        .0
-                        .transform_point3(glam::Vec3::from_slice(&[1.0, -1.0, 0.0]))
-                        .to_array(),
+                    [1.0, -1.0, 1.0],
+                    // transform
+                    //     .0
+                    //     .transform_point3(glam::Vec3::from_slice(&[0.5, -0.5, 1.0]))
+                    //     .to_array(),
+                    sprite.color.into(),
                     [1.0, 1.0],
-                    sprite.texture_handle.id(),
+                    sprite.texture_handle,
+                ),
+                Vertex::new(
+                    [1.0, 1.0, 1.0],
+                    // transform
+                    //     .0
+                    //     .transform_point3(glam::Vec3::from_slice(&[-0.5, -0.5, 1.0]))
+                    //     .to_array(),
+                    sprite.color.into(),
+                    [1.0, 0.0],
+                    sprite.texture_handle,
                 ),
             ];
 
@@ -207,8 +213,8 @@ impl SpriteRenderer {
                 index_offset + 1,
                 index_offset + 2,
                 index_offset + 2,
-                index_offset,
                 index_offset + 3,
+                index_offset,
             ];
 
             index_data.extend(local_indices);

@@ -7,6 +7,7 @@ use crate::{
 };
 
 use super::{
+    color::Color,
     components::{Camera, Label, Sprite, Transform},
     frame_clock::FrameClock,
     input::Input,
@@ -29,11 +30,28 @@ impl App {
     pub fn new(window: winit::window::Window) -> Self {
         let window = Arc::new(window);
         let graphics_device = GraphicsDevice::new(window.clone());
-        let (asset_loader, resource_loader) = App::load_all_assets(&graphics_device);
+        let (mut asset_loader, resource_loader) = App::load_all_assets(&graphics_device);
 
         let sprite_renderer = SpriteRenderer::new(&resource_loader, &graphics_device);
 
-        let world = App::register_all_components();
+        let mut world = App::register_all_components();
+        let player = world.spawn();
+        world.insert_component(player, Label::new("Player"));
+        world.insert_component(
+            player,
+            Transform::new(
+                glam::Vec3::new(0.0, 0.0, 0.0),
+                0.0,
+                glam::Vec3::new(1.0, 1.0, 1.0),
+            ),
+        );
+        world.insert_component(
+            player,
+            Sprite::new(
+                asset_loader.load_texture("./assets/uv_test.png"),
+                Color::WHITE,
+            ),
+        );
 
         let frame_clock = FrameClock::new(60);
         let input = Input::new();
@@ -115,9 +133,9 @@ impl App {
                                         resolve_target: None,
                                         ops: wgpu::Operations {
                                             load: wgpu::LoadOp::Clear(wgpu::Color {
-                                                r: 0.0,
-                                                g: 0.0,
-                                                b: 0.0,
+                                                r: 0.1,
+                                                g: 0.2,
+                                                b: 0.3,
                                                 a: 1.0,
                                             }),
                                             store: wgpu::StoreOp::Store,

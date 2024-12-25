@@ -30,7 +30,7 @@ impl ResourceLoader {
         let texture = graphics_device
             .device
             .create_texture(&wgpu::TextureDescriptor {
-                label: Some(format!("Texture {}", handle.id()).as_str()),
+                label: Some(format!("Texture {}", handle.index).as_str()),
                 size,
                 mip_level_count: 1,
                 sample_count: 1,

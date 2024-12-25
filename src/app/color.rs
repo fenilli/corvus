@@ -1,3 +1,4 @@
+#[derive(Clone, Copy)]
 pub struct Color {
     pub r: f32,
     pub g: f32,
@@ -12,5 +13,11 @@ impl Color {
 
     pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
         Self { r, g, b, a }
+    }
+}
+
+impl Into<[f32; 4]> for Color {
+    fn into(self) -> [f32; 4] {
+        [self.r, self.g, self.b, self.a]
     }
 }
