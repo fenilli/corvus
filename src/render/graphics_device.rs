@@ -16,14 +16,6 @@ impl GraphicsDevice {
         let physical_size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::default());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptionsBase::default())
-            .block_on()
-            .unwrap();
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default(), None)
-            .block_on()
-            .unwrap();
 
         let surface = instance.create_surface(window.clone()).unwrap();
         let swapchain_format = wgpu::TextureFormat::Bgra8UnormSrgb;
@@ -37,6 +29,29 @@ impl GraphicsDevice {
             alpha_mode: wgpu::CompositeAlphaMode::Auto,
             view_formats: vec![],
         };
+
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptionsBase {
+                power_preference: wgpu::PowerPreference::HighPerformance,
+                compatible_surface: Some(&surface),
+                force_fallback_adapter: false,
+            })
+            .block_on()
+            .unwrap();
+        let (device, queue) = adapter
+            .request_device(
+                &wgpu::DeviceDescriptor {
+                    label: Some("Request Device"),
+                    required_features:
+                        wgpu::Features::UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING
+                        | wgpu::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING
+                        | wgpu::Features::TEXTURE_BINDING_ARRAY,
+                    ..Default::default()
+                },
+                None,
+            )
+            .block_on()
+            .unwrap();
 
         surface.configure(&device, &surface_config);
 

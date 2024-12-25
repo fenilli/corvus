@@ -12,7 +12,7 @@ impl AssetLoader {
     }
 
     pub fn load_texture(&mut self, path: &'static str) -> Asset<Texture> {
-        let handle = Asset::<Texture>::new(path);
+        let handle = Asset::<Texture>::new(self.textures.len() as i32, path);
 
         if self.textures.contains_key(&handle) {
             return handle;
@@ -23,7 +23,9 @@ impl AssetLoader {
         handle
     }
 
-    pub fn get_textures(&self) -> std::collections::hash_map::Iter<'_, Asset<Texture>, Texture> {
+    pub fn get_all_textures(
+        &self,
+    ) -> std::collections::hash_map::Iter<'_, Asset<Texture>, Texture> {
         self.textures.iter()
     }
 }

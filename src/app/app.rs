@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use crate::{assets::AssetLoader, ecs::World, render::GraphicsDevice};
+use crate::{
+    assets::AssetLoader,
+    ecs::World,
+    render::{GraphicsDevice, ResourceLoader, SpriteRenderer},
+};
 
 use super::{
     components::{Camera, Label, Sprite, Transform},
@@ -16,6 +20,8 @@ pub struct App {
     frame_clock: FrameClock,
     graphics_device: GraphicsDevice,
 
+    sprite_renderer: SpriteRenderer,
+
     window: Arc<winit::window::Window>,
 }
 
@@ -23,8 +29,10 @@ impl App {
     pub fn new(window: winit::window::Window) -> Self {
         let window = Arc::new(window);
         let graphics_device = GraphicsDevice::new(window.clone());
+        let (asset_loader, resource_loader) = App::load_all_assets(&graphics_device);
 
-        let asset_loader = App::load_all_assets();
+        let sprite_renderer = SpriteRenderer::new(&resource_loader, &graphics_device);
+
         let world = App::register_all_components();
 
         let frame_clock = FrameClock::new(60);
@@ -38,15 +46,22 @@ impl App {
             frame_clock,
             graphics_device,
 
+            sprite_renderer,
+
             window,
         }
     }
 
-    fn load_all_assets() -> AssetLoader {
+    fn load_all_assets(graphics_device: &GraphicsDevice) -> (AssetLoader, ResourceLoader) {
         let mut asset_loader = AssetLoader::new();
         asset_loader.load_texture("./assets/uv_test.png");
 
-        asset_loader
+        let mut resource_loader = ResourceLoader::new();
+        for (handle, texture) in asset_loader.get_all_textures() {
+            resource_loader.load_texture(graphics_device, handle, texture);
+        }
+
+        (asset_loader, resource_loader)
     }
 
     fn register_all_components() -> World {
@@ -88,6 +103,9 @@ impl App {
                             .device
                             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
 
+                        self.sprite_renderer
+                            .prepare(&mut self.world, &self.graphics_device);
+
                         {
                             let mut render_pass =
                                 encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -107,6 +125,8 @@ impl App {
                                     })],
                                     ..Default::default()
                                 });
+
+                            self.sprite_renderer.render(&mut render_pass);
                         }
 
                         self.graphics_device

@@ -11,8 +11,8 @@ impl Texture {
         Ok(Self { image })
     }
 
-    pub fn data(&self) -> image::ImageBuffer<image::Rgb<u8>, Vec<u8>> {
-        self.image.to_rgb8()
+    pub fn data(&self) -> image::ImageBuffer<image::Rgba<u8>, Vec<u8>> {
+        self.image.to_rgba8()
     }
 
     pub fn dimensions(&self) -> (u32, u32) {

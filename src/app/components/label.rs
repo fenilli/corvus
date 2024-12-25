@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Label(pub &'static str);
 
 impl Label {
