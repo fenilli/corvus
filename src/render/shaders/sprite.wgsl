@@ -1,5 +1,5 @@
 struct VertexInput {
-    @location(0) position: vec3<f32>,
+    @location(0) position: vec2<f32>,
     @location(1) color: vec4<f32>,
     @location(2) uv: vec2<f32>,
     @location(3) tex_index: u32
@@ -19,7 +19,7 @@ var<uniform> world_to_projection: mat4x4<f32>;
 fn vs_main(vertex: VertexInput) -> VertexOutput {
     var output: VertexOutput;
 
-    output.clip_position = world_to_projection * vec4(vertex.position, 1.0);
+    output.clip_position = world_to_projection * vec4(vertex.position, 0.0, 1.0);
     output.color = vertex.color;
     output.uv = vertex.uv;
     output.tex_index = vertex.tex_index;

@@ -40,7 +40,7 @@ impl App {
         world.insert_component(
             camera,
             Camera::new(
-                glam::Vec3::new(0.0, 0.0, 1.0),
+                glam::Vec2::new(0.0, 0.0),
                 winit::dpi::PhysicalSize::new(size.width, size.height),
                 1.0,
             ),
@@ -50,11 +50,7 @@ impl App {
         world.insert_component(player, Label::new("Player"));
         world.insert_component(
             player,
-            Transform::new(
-                glam::Vec3::new(0.0, 0.0, 1.0),
-                glam::Vec2::new(1.0, 1.0),
-                0.0,
-            ),
+            Transform::new(glam::Vec2::new(0.0, 0.0), glam::Vec2::new(1.0, 1.0), 0.0),
         );
         world.insert_component(
             player,

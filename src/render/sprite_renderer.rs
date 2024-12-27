@@ -218,23 +218,19 @@ impl SpriteRenderer {
             let dimensions = asset_loader.get_texture_dimension(handle);
 
             let local_vertices = [
-                glam::Vec3::new(-1.0, 1.0, 1.0),
-                glam::Vec3::new(-1.0, -1.0, 1.0),
-                glam::Vec3::new(1.0, -1.0, 1.0),
-                glam::Vec3::new(1.0, 1.0, 1.0),
+                glam::Vec2::new(-1.0, 1.0),
+                glam::Vec2::new(-1.0, -1.0),
+                glam::Vec2::new(1.0, -1.0),
+                glam::Vec2::new(1.0, 1.0),
             ]
             .iter()
             .map(|&v| {
                 let scaled = v
-                    * (glam::Vec2::new(dimensions.0 as f32, dimensions.1 as f32) * transform.scale)
-                        .extend(1.0);
+                    * (glam::Vec2::new(dimensions.0 as f32, dimensions.1 as f32) * transform.scale);
 
-                let rotated =
-                    (glam::Mat3::from_angle(transform.rotation.to_radians()) * scaled).truncate();
+                let rotated = glam::Mat2::from_angle(transform.rotation.to_radians()) * scaled;
 
-                let translated = rotated + transform.position.truncate();
-
-                translated.extend(transform.position.z)
+                rotated + transform.position
             })
             .zip(Vec::from([
                 glam::Vec2::new(0.0, 0.0),
