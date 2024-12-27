@@ -1,7 +1,7 @@
 use crate::assets::{Asset, Texture};
 
 #[repr(C)]
-#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
     pos: [f32; 3],
     color: [f32; 4],

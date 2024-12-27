@@ -12,11 +12,14 @@ struct VertexOutput {
     @location(2) tex_index: u32
 };
 
+@group(0) @binding(0)
+var<uniform> world_to_projection: mat4x4<f32>;
+
 @vertex
 fn vs_main(vertex: VertexInput) -> VertexOutput {
     var output: VertexOutput;
 
-    output.clip_position = vec4(vertex.position, 1.0);
+    output.clip_position = world_to_projection * vec4(vertex.position, 1.0);
     output.color = vertex.color;
     output.uv = vertex.uv;
     output.tex_index = vertex.tex_index;
@@ -30,8 +33,8 @@ struct FragmentInput {
     @location(2) tex_index: u32
 };
 
-@group(0) @binding(0) var textures: binding_array<texture_2d<f32>>;
-@group(0) @binding(1) var tex_sampler: sampler;
+@group(1) @binding(0) var textures: binding_array<texture_2d<f32>>;
+@group(1) @binding(1) var tex_sampler: sampler;
 
 @fragment
 fn fs_main(fragment: FragmentInput) -> @location(0) vec4<f32> {

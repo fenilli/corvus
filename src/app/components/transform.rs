@@ -1,11 +1,15 @@
-pub struct Transform(pub glam::Mat4);
+pub struct Transform {
+    pub position: glam::Vec3,
+    pub scale: glam::Vec2,
+    pub rotation: f32,
+}
 
 impl Transform {
-    pub fn new(translation: glam::Vec3, rotation: f32, scale: glam::Vec3) -> Self {
-        Self(glam::Mat4::from_scale_rotation_translation(
+    pub fn new(position: glam::Vec3, scale: glam::Vec2, rotation: f32) -> Self {
+        Self {
+            position,
             scale,
-            glam::Quat::from_axis_angle(glam::Vec3::Z, rotation.to_radians()),
-            translation,
-        ))
+            rotation,
+        }
     }
 }

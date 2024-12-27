@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::{
     assets::AssetLoader,
     ecs::World,
-    render::{GraphicsDevice, ResourceLoader, SpriteRenderer},
+    render::{GraphicsDevice, SpriteRenderer},
 };
 
 use super::{
@@ -29,20 +29,31 @@ pub struct App {
 impl App {
     pub fn new(window: winit::window::Window) -> Self {
         let window = Arc::new(window);
+        let size = window.inner_size();
         let graphics_device = GraphicsDevice::new(window.clone());
-        let (mut asset_loader, resource_loader) = App::load_all_assets(&graphics_device);
+        let mut asset_loader = App::load_all_assets(&graphics_device);
 
-        let sprite_renderer = SpriteRenderer::new(&resource_loader, &graphics_device);
+        let sprite_renderer = SpriteRenderer::new(&asset_loader, &graphics_device);
 
         let mut world = App::register_all_components();
+        let camera = world.spawn();
+        world.insert_component(
+            camera,
+            Camera::new(
+                glam::Vec3::new(0.0, 0.0, 1.0),
+                winit::dpi::PhysicalSize::new(size.width, size.height),
+                1.0,
+            ),
+        );
+
         let player = world.spawn();
         world.insert_component(player, Label::new("Player"));
         world.insert_component(
             player,
             Transform::new(
-                glam::Vec3::new(0.0, 0.0, 0.0),
+                glam::Vec3::new(0.0, 0.0, 1.0),
+                glam::Vec2::new(1.0, 1.0),
                 0.0,
-                glam::Vec3::new(1.0, 1.0, 1.0),
             ),
         );
         world.insert_component(
@@ -70,16 +81,13 @@ impl App {
         }
     }
 
-    fn load_all_assets(graphics_device: &GraphicsDevice) -> (AssetLoader, ResourceLoader) {
+    fn load_all_assets(graphics_device: &GraphicsDevice) -> AssetLoader {
         let mut asset_loader = AssetLoader::new();
         asset_loader.load_texture("./assets/uv_test.png");
 
-        let mut resource_loader = ResourceLoader::new();
-        for (handle, texture) in asset_loader.get_all_textures() {
-            resource_loader.load_texture(graphics_device, handle, texture);
-        }
+        asset_loader.load_gpu_textures(graphics_device);
 
-        (asset_loader, resource_loader)
+        asset_loader
     }
 
     fn register_all_components() -> World {
@@ -121,8 +129,11 @@ impl App {
                             .device
                             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
 
-                        self.sprite_renderer
-                            .prepare(&mut self.world, &self.graphics_device);
+                        self.sprite_renderer.prepare(
+                            &mut self.world,
+                            &self.asset_loader,
+                            &self.graphics_device,
+                        );
 
                         {
                             let mut render_pass =
