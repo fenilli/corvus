@@ -2,7 +2,7 @@ pub mod components;
 pub mod systems;
 
 mod app;
-mod color;
+mod asset_loader;
 mod frame_clock;
 mod input;
 

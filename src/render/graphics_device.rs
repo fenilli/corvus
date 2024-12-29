@@ -8,11 +8,13 @@ pub struct GraphicsDevice {
     pub surface_config: wgpu::SurfaceConfiguration,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
+
     pub window: Arc<winit::window::Window>,
 }
 
 impl GraphicsDevice {
-    pub fn new(window: Arc<winit::window::Window>) -> Self {
+    pub fn new(window: winit::window::Window) -> Self {
+        let window = Arc::new(window);
         let physical_size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::default());

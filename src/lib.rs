@@ -1,5 +1,4 @@
 mod app;
-mod assets;
 mod ecs;
 mod render;
 
