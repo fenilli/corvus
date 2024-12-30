@@ -4,6 +4,7 @@ pub struct Entity {
     pub generation: u32,
 }
 
+#[allow(dead_code)]
 impl Entity {
     pub const DANGLING: Self = Self {
         id: usize::MAX,
@@ -11,6 +12,7 @@ impl Entity {
     };
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 enum AllocatorEntry {
     Free(usize),
@@ -24,6 +26,7 @@ pub struct EntityAllocator {
     free_head: usize,
 }
 
+#[allow(dead_code)]
 impl EntityAllocator {
     pub fn new() -> Self {
         Self {

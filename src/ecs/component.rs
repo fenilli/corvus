@@ -7,6 +7,7 @@ pub struct ComponentVec<T> {
     components: Vec<Option<RefCell<T>>>,
 }
 
+#[allow(dead_code)]
 impl<T: Component> ComponentVec<T> {
     pub fn new() -> Self {
         Self {
@@ -39,6 +40,7 @@ impl<T: Component> ComponentVec<T> {
     }
 }
 
+#[allow(dead_code)]
 pub trait AnyVec {
     fn as_any(&self) -> &dyn std::any::Any;
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any;

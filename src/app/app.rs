@@ -5,7 +5,7 @@ use crate::{
 
 use super::{
     asset_loader::AssetLoader,
-    components::{Camera, Label, Sprite, Transform},
+    components::{Camera, Sprite, Transform},
     frame_clock::FrameClock,
     input::Input,
     systems::{GpuResourcesSystem, SpriteRenderSystem},
@@ -47,7 +47,6 @@ impl App {
         );
 
         let player = world.spawn();
-        world.insert_component(player, Label::new("Player"));
         world.insert_component(
             player,
             Transform::new(glam::Vec2::new(0.0, 0.0), glam::Vec2::new(1.0, 1.0), 0.0),
@@ -73,7 +72,6 @@ impl App {
     fn register_all_components() -> World {
         let mut world = World::new();
 
-        world.register_component::<Label>();
         world.register_component::<Camera>();
         world.register_component::<Transform>();
         world.register_component::<Sprite>();
@@ -90,9 +88,9 @@ impl App {
 
         match event {
             winit::event::WindowEvent::RedrawRequested => {
-                let (fixed_deltas, delta_time) = self.frame_clock.update();
+                let (fixed_deltas, _delta_time) = self.frame_clock.update();
 
-                for delta_time in fixed_deltas {
+                for _delta_time in fixed_deltas {
                     // println!("FDT: {}", delta_time);
                 }
 
