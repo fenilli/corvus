@@ -16,6 +16,7 @@ pub struct World {
     components: HashMap<TypeId, Box<dyn AnyVec>>,
 }
 
+#[allow(dead_code)]
 impl World {
     pub fn new() -> Self {
         Self {
