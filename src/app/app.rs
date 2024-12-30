@@ -1,6 +1,6 @@
 use crate::{
     ecs::World,
-    render::{renderers::SpriteRenderer, GraphicsDevice, ResourceLoader},
+    render::{GraphicsDevice, ResourceLoader, SpriteRenderer},
 };
 
 use super::{
@@ -35,15 +35,16 @@ impl App {
 
         let mut world = App::register_all_components();
 
-        // let camera = world.spawn();
-        // world.insert_component(
-        //     camera,
-        //     Camera::new(
-        //         glam::Vec2::new(0.0, 0.0),
-        //         winit::dpi::PhysicalSize::new(size.width, size.height),
-        //         1.0,
-        //     ),
-        // );
+        let size = graphics_device.window.inner_size();
+        let camera = world.spawn();
+        world.insert_component(
+            camera,
+            Camera::new(
+                glam::Vec2::new(0.0, 0.0),
+                winit::dpi::PhysicalSize::new(size.width, size.height),
+                1.0,
+            ),
+        );
 
         let player = world.spawn();
         world.insert_component(player, Label::new("Player"));

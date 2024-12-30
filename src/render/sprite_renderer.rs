@@ -20,6 +20,8 @@ pub struct SpriteRenderer {
     batch_draws: std::collections::HashMap<&'static str, BatchDrawCall>,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
+    camera_buffer: wgpu::Buffer,
+    camera_bind_group_layout: wgpu::BindGroupLayout,
     texture_bind_group_layout: wgpu::BindGroupLayout,
     pipeline: wgpu::RenderPipeline,
 }
@@ -46,15 +48,41 @@ impl SpriteRenderer {
                 mapped_at_creation: false,
             });
 
+        let camera_buffer = graphics_device
+            .device
+            .create_buffer(&wgpu::BufferDescriptor {
+                label: Some("Sprite Camera Buffer"),
+                size: std::mem::size_of::<glam::Mat4>() as wgpu::BufferAddress,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+
         let shader = graphics_device
             .device
-            .create_shader_module(include_wgsl!("../shaders/sprite.wgsl"));
+            .create_shader_module(include_wgsl!("shaders/sprite.wgsl"));
+
+        let camera_bind_group_layout =
+            graphics_device
+                .device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("Sprite Camera Bind Group Layout"),
+                    entries: &[wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    }],
+                });
 
         let texture_bind_group_layout =
             graphics_device
                 .device
                 .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                    label: Some("Texture Bind Group Layout"),
+                    label: Some("Sprite Texture Bind Group Layout"),
                     entries: &[
                         wgpu::BindGroupLayoutEntry {
                             binding: 0,
@@ -83,7 +111,10 @@ impl SpriteRenderer {
                     layout: Some(&graphics_device.device.create_pipeline_layout(
                         &wgpu::PipelineLayoutDescriptor {
                             label: Some("Sprite Pipeline Layout"),
-                            bind_group_layouts: &[&texture_bind_group_layout],
+                            bind_group_layouts: &[
+                                &camera_bind_group_layout,
+                                &texture_bind_group_layout,
+                            ],
                             push_constant_ranges: &[],
                         },
                     )),
@@ -118,9 +149,23 @@ impl SpriteRenderer {
             batch_draws,
             vertex_buffer,
             index_buffer,
+            camera_buffer,
+            camera_bind_group_layout,
             texture_bind_group_layout,
             pipeline,
         }
+    }
+
+    pub fn prepare(
+        &mut self,
+        graphics_device: &GraphicsDevice,
+        camera_view_projection: glam::Mat4,
+    ) {
+        graphics_device.queue.write_buffer(
+            &self.camera_buffer,
+            0,
+            bytemuck::bytes_of(&camera_view_projection),
+        );
     }
 
     pub fn draw(&mut self, texture_handle: &'static str, vertex_data: Vec<Vertex>) {
@@ -144,8 +189,6 @@ impl SpriteRenderer {
         batch.index_data.extend(index_data);
     }
 
-    // pub fn prepare(&mut self, graphics_device: &GraphicsDevice) {}
-
     pub fn render(
         &mut self,
         resource_loader: &ResourceLoader,
@@ -153,6 +196,18 @@ impl SpriteRenderer {
         render_pass: &mut wgpu::RenderPass,
     ) {
         render_pass.set_pipeline(&self.pipeline);
+
+        let camera_bind_group =
+            graphics_device
+                .device
+                .create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("Camera Bind Group"),
+                    layout: &self.camera_bind_group_layout,
+                    entries: &[wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: self.camera_buffer.as_entire_binding(),
+                    }],
+                });
 
         for (&texture_handle, draw_call) in &self.batch_draws {
             let texture = resource_loader.get_texture(texture_handle);
@@ -187,7 +242,8 @@ impl SpriteRenderer {
                 bytemuck::cast_slice(&draw_call.index_data),
             );
 
-            render_pass.set_bind_group(0, &texture_bind_group, &[]);
+            render_pass.set_bind_group(0, &camera_bind_group, &[]);
+            render_pass.set_bind_group(1, &texture_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.draw_indexed(0..draw_call.index_data.len() as u32, 0, 0..1);

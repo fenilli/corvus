@@ -1,21 +1,31 @@
 use crate::{
     app::{
         asset_loader::AssetLoader,
-        components::{Sprite, Transform},
+        components::{Camera, Sprite, Transform},
     },
     ecs::World,
-    render::{renderers::SpriteRenderer, GraphicsDevice, ResourceLoader, Vertex},
+    render::{GraphicsDevice, ResourceLoader, SpriteRenderer, Vertex},
 };
 
 pub struct SpriteRenderSystem;
 
 impl SpriteRenderSystem {
     pub fn prepare(
-        _graphics_device: &GraphicsDevice,
-        _asset_loader: &AssetLoader,
+        graphics_device: &GraphicsDevice,
+        asset_loader: &AssetLoader,
         sprite_renderer: &mut SpriteRenderer,
         world: &mut World,
     ) {
+        let camera_view_projection = world
+            .entities()
+            .find_map(|entity| match world.get_component::<Camera>(entity) {
+                Some(camera) => Some(camera.world_to_projection()),
+                None => None,
+            })
+            .expect("app can only run if there is an camera entity");
+
+        sprite_renderer.prepare(graphics_device, camera_view_projection);
+
         for (transform, sprite) in world.entities().filter_map(|entity| {
             match (
                 world.get_component::<Transform>(entity),
@@ -25,7 +35,7 @@ impl SpriteRenderSystem {
                 _ => None,
             }
         }) {
-            // let dimensions = asset_loader.dimensions(sprite.texture_handle);
+            let dimensions = asset_loader.dimensions(sprite.texture_handle);
 
             let vertex_data = [
                 (glam::Vec2::new(-1.0, 1.0), glam::Vec2::new(0.0, 0.0)),
@@ -35,9 +45,8 @@ impl SpriteRenderSystem {
             ]
             .iter()
             .map(|&(vertex, uv)| {
-                let scaled = vertex;
-                // let scaled = vertex
-                //     * (glam::Vec2::new(dimensions.0 as f32, dimensions.1 as f32) * transform.scale);
+                let scaled = vertex
+                    * (glam::Vec2::new(dimensions.0 as f32, dimensions.1 as f32) * transform.scale);
                 let rotated = glam::Mat2::from_angle(transform.rotation.to_radians()) * scaled;
 
                 (rotated + transform.position, uv)
@@ -47,8 +56,6 @@ impl SpriteRenderSystem {
 
             sprite_renderer.draw(sprite.texture_handle, vertex_data);
         }
-
-        // sprite_renderer.prepare(graphics_device, vertex_data, index_data);
     }
 
     pub fn render(
