@@ -46,15 +46,67 @@ impl App {
             ),
         );
 
-        let player = world.spawn();
+        let handle_uv_test = asset_loader.load_texture("./assets/uv_test.png");
+        let handle_uv_test_2 = asset_loader.load_texture("./assets/uv_test_2.png");
+
+        let dimensions_uv_test = asset_loader.dimensions(handle_uv_test);
+        let dimensions_uv_test_2 = asset_loader.dimensions(handle_uv_test_2);
+
+        let e1 = world.spawn();
         world.insert_component(
-            player,
-            Transform::new(glam::Vec2::new(0.0, 0.0), glam::Vec2::new(1.0, 1.0), 0.0),
+            e1,
+            Transform::new(
+                glam::Vec2::new(
+                    0.0 + dimensions_uv_test.0 as f32 * 0.2,
+                    0.0 + dimensions_uv_test.1 as f32 * 0.2,
+                ),
+                glam::Vec2::new(0.2, 0.2),
+                0.0,
+            ),
         );
+        world.insert_component(e1, Sprite::new(handle_uv_test));
+
+        let e2 = world.spawn();
         world.insert_component(
-            player,
-            Sprite::new(asset_loader.load_texture("./assets/uv_test.png")),
+            e2,
+            Transform::new(
+                glam::Vec2::new(
+                    0.0 + dimensions_uv_test.0 as f32 * 0.2,
+                    size.height as f32 - dimensions_uv_test.1 as f32 * 0.2,
+                ),
+                glam::Vec2::new(0.2, 0.2),
+                0.0,
+            ),
         );
+        world.insert_component(e2, Sprite::new(handle_uv_test));
+
+        let e3 = world.spawn();
+        world.insert_component(
+            e3,
+            Transform::new(
+                glam::Vec2::new(
+                    size.width as f32 - dimensions_uv_test_2.0 as f32 * 0.2,
+                    size.height as f32 - dimensions_uv_test_2.1 as f32 * 0.2,
+                ),
+                glam::Vec2::new(0.2, 0.2),
+                0.0,
+            ),
+        );
+        world.insert_component(e3, Sprite::new(handle_uv_test_2));
+
+        let e4 = world.spawn();
+        world.insert_component(
+            e4,
+            Transform::new(
+                glam::Vec2::new(
+                    size.width as f32 - dimensions_uv_test_2.0 as f32 * 0.2,
+                    0.0 + dimensions_uv_test_2.1 as f32 * 0.2,
+                ),
+                glam::Vec2::new(0.2, 0.2),
+                0.0,
+            ),
+        );
+        world.insert_component(e4, Sprite::new(handle_uv_test_2));
 
         Self {
             graphics_device,
