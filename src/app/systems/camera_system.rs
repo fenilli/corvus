@@ -8,7 +8,7 @@ impl CameraSystem {
             panic!("we need a camera with projection to show to the screen.");
         };
 
-        let view_projection = camera.get_view_projection(glam::Vec2::new(0.0, 0.0));
+        let view_projection = camera.get_view_projection();
         renderer.set_view_projection(view_projection);
     }
 }

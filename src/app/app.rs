@@ -34,7 +34,10 @@ impl App {
             let window_size = window.inner_size();
 
             let camera = world.spawn();
-            world.insert_component(camera, Camera::new(window_size, 1.0));
+            world.insert_component(
+                camera,
+                Camera::new(glam::Vec2::new(0.0, 0.0), window_size, 1.0),
+            );
 
             let e1 = world.spawn();
             world.insert_component(
