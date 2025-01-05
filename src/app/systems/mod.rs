@@ -1,5 +1,5 @@
-mod gpu_resources_system;
-mod sprite_render_system;
+mod camera_system;
+mod render_system;
 
-pub use gpu_resources_system::GpuResourcesSystem;
-pub use sprite_render_system::SpriteRenderSystem;
+pub use camera_system::CameraSystem;
+pub use render_system::RenderSystem;

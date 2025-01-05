@@ -75,6 +75,18 @@ impl World {
         storage.remove(index);
     }
 
+    pub fn single<T: Component>(&self) -> Option<Ref<T>> {
+        self.entities()
+            .filter_map(|entity| self.get_component::<T>(entity))
+            .next()
+    }
+
+    pub fn single_mut<T: Component>(&self) -> Option<RefMut<T>> {
+        self.entities()
+            .filter_map(|entity| self.get_component_mut::<T>(entity))
+            .next()
+    }
+
     pub fn get_component<T: Component>(&self, entity: Entity) -> Option<Ref<T>> {
         let Some(any_vec) = self.components.get(&TypeId::of::<T>()) else {
             return None;
