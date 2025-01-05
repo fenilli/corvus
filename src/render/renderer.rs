@@ -1,5 +1,5 @@
 use pollster::FutureExt;
-use wgpu::{core::device, include_wgsl};
+use wgpu::include_wgsl;
 
 use super::{resource_registry::ResourceRegistry, vertex::Vertex};
 

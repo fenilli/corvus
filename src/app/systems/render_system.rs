@@ -1,5 +1,5 @@
 use crate::{
-    app::components::{Sprite, Transform},
+    app::components::{Camera, Sprite, Transform},
     ecs::World,
     render::{Renderer, Vertex},
 };
@@ -7,6 +7,15 @@ use crate::{
 pub struct RenderSystem;
 
 impl RenderSystem {
+    pub fn prepare_projection(world: &World, renderer: &mut Renderer) {
+        let Some(camera) = world.single::<Camera>() else {
+            panic!("we need a camera with projection to show to the screen.");
+        };
+
+        let view_projection = camera.get_view_projection();
+        renderer.set_view_projection(view_projection);
+    }
+
     pub fn prepare_sprites(world: &World, renderer: &mut Renderer) {
         for (transform, sprite) in world.entities().filter_map(|entity| {
             match (

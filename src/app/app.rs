@@ -1,8 +1,4 @@
-use crate::{
-    app::systems::{CameraSystem, RenderSystem},
-    ecs::World,
-    render::{Renderer, Vertex},
-};
+use crate::{app::systems::RenderSystem, ecs::World, render::Renderer};
 
 use super::{
     components::{Camera, Sprite, Transform},
@@ -137,7 +133,7 @@ impl App {
                 let (target, view) = self.renderer.create_render_target();
                 let mut encoder = self.renderer.create_encoder();
 
-                CameraSystem::prepare_projection(&self.world, &mut self.renderer);
+                RenderSystem::prepare_projection(&self.world, &mut self.renderer);
                 RenderSystem::prepare_sprites(&self.world, &mut self.renderer);
 
                 {
