@@ -12,17 +12,4 @@ impl Transform {
             rotation,
         }
     }
-
-    pub fn apply_transform(&self, vertices: Vec<[f32; 2]>) -> Vec<[f32; 2]> {
-        vertices
-            .iter()
-            .map(|&[x, y]| {
-                let point = glam::vec2(x, y) * self.scale;
-                let rotated = glam::Mat2::from_angle(self.rotation.to_radians()) * point;
-                let translated = rotated + self.position;
-
-                [translated.x, translated.y]
-            })
-            .collect()
-    }
 }

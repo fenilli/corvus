@@ -45,6 +45,7 @@ impl App {
                 Sprite::new(
                     "assets/uv_test.png",
                     winit::dpi::PhysicalSize::new(248, 248),
+                    [1.0, 1.0, 1.0, 1.0],
                 ),
             );
 
@@ -62,6 +63,7 @@ impl App {
                 Sprite::new(
                     "assets/uv_test.png",
                     winit::dpi::PhysicalSize::new(248, 248),
+                    [1.0, 1.0, 1.0, 1.0],
                 ),
             );
 
@@ -79,6 +81,7 @@ impl App {
                 Sprite::new(
                     "assets/uv_test_2.png",
                     winit::dpi::PhysicalSize::new(248, 248),
+                    [1.0, 1.0, 1.0, 1.0],
                 ),
             );
 
@@ -96,6 +99,7 @@ impl App {
                 Sprite::new(
                     "assets/uv_test_2.png",
                     winit::dpi::PhysicalSize::new(248, 248),
+                    [1.0, 1.0, 1.0, 1.0],
                 ),
             );
         }

@@ -26,19 +26,22 @@ impl RenderSystem {
                 _ => None,
             }
         }) {
-            let vertex_pos = vec![[-1.0, 1.0], [-1.0, -1.0], [1.0, -1.0], [1.0, 1.0]];
-            let vertex_color = [1.0, 1.0, 1.0, 1.0];
-            let vertex_uv = [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
+            let vertex_data: Vec<Vertex> = [[-1.0, 1.0], [-1.0, -1.0], [1.0, -1.0], [1.0, 1.0]]
+                .iter()
+                .zip([[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]])
+                .map(|([x, y], uv)| {
+                    let width = sprite.source_rect.width as f32;
+                    let height = sprite.source_rect.height as f32;
 
-            renderer.draw(
-                sprite.texture_id,
-                transform
-                    .apply_transform(sprite.apply_size(vertex_pos))
-                    .iter()
-                    .zip(&vertex_uv)
-                    .map(|(&pos, &uv)| Vertex::new(pos, vertex_color, uv))
-                    .collect(),
-            );
+                    let point = glam::vec2(x * width, y * height) * transform.scale;
+                    let rotated = glam::Mat2::from_angle(transform.rotation.to_radians()) * point;
+                    let translated = rotated + transform.position;
+
+                    Vertex::new([translated.x, translated.y], sprite.tint, uv)
+                })
+                .collect();
+
+            renderer.draw(sprite.texture_id, vertex_data);
         }
     }
 }
