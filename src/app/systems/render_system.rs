@@ -1,5 +1,5 @@
 use crate::{
-    app::components::{Camera, Sprite, Transform},
+    app::components::{Camera, Color, Sprite, Transform},
     ecs::World,
     render::{Renderer, Vertex},
 };
@@ -37,7 +37,7 @@ impl RenderSystem {
                     let rotated = glam::Mat2::from_angle(transform.rotation.to_radians()) * point;
                     let translated = rotated + transform.position;
 
-                    Vertex::new([translated.x, translated.y], sprite.tint, uv)
+                    Vertex::new([translated.x, translated.y], Color::WHITE.into(), uv)
                 })
                 .collect();
 

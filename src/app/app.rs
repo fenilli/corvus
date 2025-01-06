@@ -1,7 +1,7 @@
 use crate::{app::systems::RenderSystem, ecs::World, render::Renderer};
 
 use super::{
-    components::{Camera, Sprite, Transform},
+    components::{Camera, Color, SourceRect, Sprite, Transform},
     utils::{FrameTimer, Input},
 };
 
@@ -42,11 +42,7 @@ impl App {
             );
             world.insert_component(
                 e1,
-                Sprite::new(
-                    "assets/uv_test.png",
-                    winit::dpi::PhysicalSize::new(248, 248),
-                    [1.0, 1.0, 1.0, 1.0],
-                ),
+                Sprite::new("assets/uv_test.png", SourceRect::new(0.0, 0.0, 248, 248)),
             );
 
             let e2 = world.spawn();
@@ -60,11 +56,7 @@ impl App {
             );
             world.insert_component(
                 e2,
-                Sprite::new(
-                    "assets/uv_test.png",
-                    winit::dpi::PhysicalSize::new(248, 248),
-                    [1.0, 1.0, 1.0, 1.0],
-                ),
+                Sprite::new("assets/uv_test.png", SourceRect::new(0.0, 0.0, 248, 248)),
             );
 
             let e3 = world.spawn();
@@ -78,11 +70,7 @@ impl App {
             );
             world.insert_component(
                 e3,
-                Sprite::new(
-                    "assets/uv_test_2.png",
-                    winit::dpi::PhysicalSize::new(248, 248),
-                    [1.0, 1.0, 1.0, 1.0],
-                ),
+                Sprite::new("assets/uv_test_2.png", SourceRect::new(0.0, 0.0, 248, 248)),
             );
 
             let e4 = world.spawn();
@@ -96,11 +84,7 @@ impl App {
             );
             world.insert_component(
                 e4,
-                Sprite::new(
-                    "assets/uv_test_2.png",
-                    winit::dpi::PhysicalSize::new(248, 248),
-                    [1.0, 1.0, 1.0, 1.0],
-                ),
+                Sprite::new("assets/uv_test_2.png", SourceRect::new(0.0, 0.0, 248, 248)),
             );
         }
 
