@@ -1,6 +1,8 @@
 use pollster::FutureExt;
 use wgpu::include_wgsl;
 
+use crate::registry::atlas::Atlas;
+
 use super::{resource_registry::ResourceRegistry, vertex::Vertex};
 
 pub struct DrawCall {
@@ -224,13 +226,13 @@ impl Renderer {
         );
     }
 
-    pub fn draw(&mut self, texture_id: &str, vertex_data: Vec<Vertex>) {
+    pub fn draw(&mut self, atlas: &Atlas, vertex_data: Vec<Vertex>) {
         self.resource_registry
-            .create_texture(&self.device, &self.queue, &texture_id);
+            .create_texture(&self.device, &self.queue, atlas.path, &atlas.image);
 
         let batch = self
             .batch_draws
-            .entry(texture_id.to_string())
+            .entry(atlas.path.to_string())
             .or_insert(DrawCall::new(Vec::new(), Vec::new()));
 
         let index_data = vec![

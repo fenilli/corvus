@@ -13,9 +13,14 @@ impl ResourceRegistry {
         }
     }
 
-    pub fn create_texture(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, key: &str) {
-        self.textures.entry(key.to_string()).or_insert({
-            let image = image::open(key).unwrap().to_rgba8();
+    pub fn create_texture(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        name: &str,
+        image: &image::RgbaImage,
+    ) {
+        self.textures.entry(name.to_string()).or_insert({
             let dimensions = image.dimensions();
 
             let size = wgpu::Extent3d {
@@ -25,7 +30,7 @@ impl ResourceRegistry {
             };
 
             let texture_desc = &wgpu::TextureDescriptor {
-                label: Some(key),
+                label: Some(name),
                 size,
                 mip_level_count: 1,
                 sample_count: 1,

@@ -18,7 +18,7 @@ impl AssetRegistry {
         self.atlas_registry.insert(atlas)
     }
 
-    pub fn get_atlas(&self, handle: Handle<Atlas>) -> Option<&std::sync::Arc<Atlas>> {
+    pub fn get_atlas(&self, handle: &Handle<Atlas>) -> Option<&std::sync::Arc<Atlas>> {
         self.atlas_registry.get(handle)
     }
 }

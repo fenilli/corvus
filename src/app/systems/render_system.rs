@@ -1,6 +1,7 @@
 use crate::{
     app::components::{Camera, Color, Sprite, Transform},
     ecs::World,
+    registry::AssetRegistry,
     render::{Renderer, Vertex},
 };
 
@@ -16,7 +17,7 @@ impl RenderSystem {
         renderer.set_view_projection(view_projection);
     }
 
-    pub fn prepare_sprites(world: &World, renderer: &mut Renderer) {
+    pub fn prepare_sprites(world: &World, asset_registry: &AssetRegistry, renderer: &mut Renderer) {
         for (transform, sprite) in world.entities().filter_map(|entity| {
             match (
                 world.get_component::<Transform>(entity),
@@ -26,22 +27,34 @@ impl RenderSystem {
                 _ => None,
             }
         }) {
+            let atlas: &std::sync::Arc<crate::registry::atlas::Atlas> =
+                asset_registry.get_atlas(&sprite.atlas_handle).unwrap();
+
+            let atlas_region = atlas.get_region(&sprite.region_name).unwrap();
+            let (u_min, v_min, u_max, v_max) = atlas.calculate_uv(&sprite.region_name);
+
             let vertex_data: Vec<Vertex> = [[-1.0, 1.0], [-1.0, -1.0], [1.0, -1.0], [1.0, 1.0]]
                 .iter()
-                .zip([[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]])
-                .map(|([x, y], uv)| {
-                    let width = sprite.source_rect.width as f32;
-                    let height = sprite.source_rect.height as f32;
+                .map(|[x, y]| {
+                    let (width, height) = atlas_region.dimensions();
 
-                    let point = glam::vec2(x * width, y * height) * transform.scale;
+                    let point = glam::vec2(x * width as f32, y * height as f32) * transform.scale;
                     let rotated = glam::Mat2::from_angle(transform.rotation.to_radians()) * point;
                     let translated = rotated + transform.position;
+
+                    let uv = match (x, y) {
+                        (-1.0, 1.0) => [u_min, v_min],
+                        (-1.0, -1.0) => [u_min, v_max],
+                        (1.0, -1.0) => [u_max, v_max],
+                        (1.0, 1.0) => [u_max, v_min],
+                        _ => [0.0, 0.0],
+                    };
 
                     Vertex::new([translated.x, translated.y], Color::WHITE.into(), uv)
                 })
                 .collect();
 
-            renderer.draw(sprite.texture_id, vertex_data);
+            renderer.draw(atlas, vertex_data);
         }
     }
 }

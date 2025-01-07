@@ -1,15 +1,18 @@
-use super::source_rect::SourceRect;
+use crate::registry::{
+    atlas::{Atlas, AtlasRegionId},
+    Handle,
+};
 
 pub struct Sprite {
-    pub texture_id: &'static str,
-    pub source_rect: SourceRect,
+    pub atlas_handle: Handle<Atlas>,
+    pub region_name: AtlasRegionId,
 }
 
 impl Sprite {
-    pub fn new(texture_id: &'static str, source_rect: SourceRect) -> Self {
+    pub fn new(atlas_handle: Handle<Atlas>, region_name: AtlasRegionId) -> Self {
         Self {
-            texture_id,
-            source_rect,
+            atlas_handle,
+            region_name,
         }
     }
 }

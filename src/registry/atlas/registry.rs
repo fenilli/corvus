@@ -30,7 +30,7 @@ impl AtlasRegistry {
         handle
     }
 
-    pub fn get(&self, handle: Handle<Atlas>) -> Option<&std::sync::Arc<Atlas>> {
+    pub fn get(&self, handle: &Handle<Atlas>) -> Option<&std::sync::Arc<Atlas>> {
         self.atlases.get(&handle.id)
     }
 }

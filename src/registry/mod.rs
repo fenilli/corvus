@@ -5,3 +5,4 @@ mod handle;
 mod resource_registry;
 
 pub use asset_registry::AssetRegistry;
+pub use handle::Handle;

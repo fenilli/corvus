@@ -2,14 +2,14 @@ use crate::{
     app::systems::RenderSystem,
     ecs::World,
     registry::{
-        atlas::{Atlas, AtlasRegion},
+        atlas::{Atlas, AtlasRegionId},
         AssetRegistry,
     },
     render::Renderer,
 };
 
 use super::{
-    components::{Camera, SourceRect, Sprite, Transform},
+    components::{Camera, Sprite, Transform},
     utils::{FrameTimer, Input},
 };
 
@@ -39,24 +39,6 @@ impl App {
         {
             let window_size = window.inner_size();
 
-            let handle = asset_registry.load_atlas(Atlas::from_regions(
-                "assets/uv_test.png",
-                vec![AtlasRegion::new(0.0, 0.0, 248, 248)],
-            ));
-
-            println!("handle: {}", handle.id);
-
-            let atlas = asset_registry.get_atlas(handle);
-            match atlas {
-                Some(atlas) => println!(
-                    "path {}, width {}, height {}",
-                    atlas.path,
-                    atlas.image.width(),
-                    atlas.image.height()
-                ),
-                _ => (),
-            };
-
             let camera = world.spawn();
             world.insert_component(
                 camera,
@@ -66,11 +48,21 @@ impl App {
             let e1 = world.spawn();
             world.insert_component(
                 e1,
-                Transform::new(glam::vec2(0.0, 0.0), glam::vec2(1.0, 1.0), 0.0),
+                Transform::new(glam::vec2(124.0, 124.0), glam::vec2(1.0, 1.0), 0.0),
             );
+
             world.insert_component(
                 e1,
-                Sprite::new("assets/uv_test.png", SourceRect::new(0.0, 0.0, 248, 248)),
+                Sprite::new(
+                    asset_registry.load_atlas(Atlas::from_grid(
+                        "assets/uv_test.png",
+                        124,
+                        124,
+                        0,
+                        0,
+                    )),
+                    AtlasRegionId::Grid((0, 0)),
+                ),
             );
         }
 
@@ -107,7 +99,11 @@ impl App {
                 let mut encoder = self.renderer.create_encoder();
 
                 RenderSystem::prepare_projection(&self.world, &mut self.renderer);
-                RenderSystem::prepare_sprites(&self.world, &mut self.renderer);
+                RenderSystem::prepare_sprites(
+                    &self.world,
+                    &self.asset_registry,
+                    &mut self.renderer,
+                );
 
                 {
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
