@@ -1,13 +1,22 @@
-use crate::{app::systems::RenderSystem, ecs::World, render::Renderer};
+use crate::{
+    app::systems::RenderSystem,
+    ecs::World,
+    registry::{
+        atlas::{Atlas, AtlasRegion},
+        AssetRegistry,
+    },
+    render::Renderer,
+};
 
 use super::{
-    components::{Camera, Color, SourceRect, Sprite, Transform},
+    components::{Camera, SourceRect, Sprite, Transform},
     utils::{FrameTimer, Input},
 };
 
 pub struct App {
     input: Input,
     frame_timer: FrameTimer,
+    asset_registry: AssetRegistry,
     world: World,
 
     renderer: Renderer,
@@ -21,6 +30,7 @@ impl App {
 
         let input = Input::new();
         let frame_timer = FrameTimer::new(60);
+        let mut asset_registry = AssetRegistry::new();
         let mut world = World::new();
         world.register_component::<Camera>();
         world.register_component::<Sprite>();
@@ -28,6 +38,24 @@ impl App {
 
         {
             let window_size = window.inner_size();
+
+            let handle = asset_registry.load_atlas(Atlas::from_regions(
+                "assets/uv_test.png",
+                vec![AtlasRegion::new(0.0, 0.0, 248, 248)],
+            ));
+
+            println!("handle: {}", handle.id);
+
+            let atlas = asset_registry.get_atlas(handle);
+            match atlas {
+                Some(atlas) => println!(
+                    "path {}, width {}, height {}",
+                    atlas.path,
+                    atlas.image.width(),
+                    atlas.image.height()
+                ),
+                _ => (),
+            };
 
             let camera = world.spawn();
             world.insert_component(
@@ -44,48 +72,6 @@ impl App {
                 e1,
                 Sprite::new("assets/uv_test.png", SourceRect::new(0.0, 0.0, 248, 248)),
             );
-
-            let e2 = world.spawn();
-            world.insert_component(
-                e2,
-                Transform::new(
-                    glam::vec2(0.0, window_size.height as f32),
-                    glam::vec2(1.0, 1.0),
-                    0.0,
-                ),
-            );
-            world.insert_component(
-                e2,
-                Sprite::new("assets/uv_test.png", SourceRect::new(0.0, 0.0, 248, 248)),
-            );
-
-            let e3 = world.spawn();
-            world.insert_component(
-                e3,
-                Transform::new(
-                    glam::vec2(window_size.width as f32, 0.0),
-                    glam::vec2(1.0, 1.0),
-                    0.0,
-                ),
-            );
-            world.insert_component(
-                e3,
-                Sprite::new("assets/uv_test_2.png", SourceRect::new(0.0, 0.0, 248, 248)),
-            );
-
-            let e4 = world.spawn();
-            world.insert_component(
-                e4,
-                Transform::new(
-                    glam::vec2(window_size.width as f32, window_size.height as f32),
-                    glam::vec2(1.0, 1.0),
-                    0.0,
-                ),
-            );
-            world.insert_component(
-                e4,
-                Sprite::new("assets/uv_test_2.png", SourceRect::new(0.0, 0.0, 248, 248)),
-            );
         }
 
         let renderer = Renderer::new(window.clone());
@@ -93,6 +79,7 @@ impl App {
         Self {
             input,
             frame_timer,
+            asset_registry,
             world,
 
             renderer,
@@ -115,8 +102,6 @@ impl App {
                 }
 
                 // Delta
-
-                println!("input: {:?}", self.input.cursor_position);
 
                 let (target, view) = self.renderer.create_render_target();
                 let mut encoder = self.renderer.create_encoder();
