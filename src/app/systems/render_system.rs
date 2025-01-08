@@ -35,20 +35,25 @@ impl RenderSystem {
 
             let vertex_data: Vec<Vertex> = [[-1.0, 1.0], [-1.0, -1.0], [1.0, -1.0], [1.0, 1.0]]
                 .iter()
-                .map(|[x, y]| {
+                .zip([
+                    [u_min, v_min],
+                    [u_min, v_max],
+                    [u_max, v_max],
+                    [u_max, v_min],
+                ])
+                .map(|([x, y], uv)| {
                     let (width, height) = atlas_region.dimensions();
 
-                    let point = glam::vec2(x * width as f32, y * height as f32) * transform.scale;
-                    let rotated = glam::Mat2::from_angle(transform.rotation.to_radians()) * point;
-                    let translated = rotated + transform.position;
-
-                    let uv = match (x, y) {
-                        (-1.0, 1.0) => [u_min, v_min],
-                        (-1.0, -1.0) => [u_min, v_max],
-                        (1.0, -1.0) => [u_max, v_max],
-                        (1.0, 1.0) => [u_max, v_min],
-                        _ => [0.0, 0.0],
-                    };
+                    let sized = glam::vec2(x * width as f32, y * height as f32);
+                    let scaled = sized * transform.scale;
+                    let originated = scaled
+                        + glam::vec2(
+                            transform.origin.x * width as f32,
+                            transform.origin.y * height as f32,
+                        );
+                    let rotated =
+                        glam::Mat2::from_angle(transform.rotation.to_radians()) * originated;
+                    let translated = rotated + transform.position.truncate();
 
                     Vertex::new([translated.x, translated.y], Color::WHITE.into(), uv)
                 })

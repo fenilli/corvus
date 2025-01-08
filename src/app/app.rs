@@ -9,9 +9,7 @@ use crate::{
 };
 
 use super::{
-    components::{
-        Animation, AnimationFrame, AnimationSet, AnimationState, Camera, Sprite, Transform,
-    },
+    components::{Animation, AnimationSet, AnimationState, Camera, Sprite, Transform},
     systems::{AnimationSystem, AssetSystem},
     utils::{FrameTimer, Input},
 };
@@ -53,7 +51,12 @@ impl App {
             let e1 = world.spawn();
             world.insert_component(
                 e1,
-                Transform::new(glam::vec2(124.0, 124.0), glam::vec2(1.0, 1.0), 0.0),
+                Transform::new(
+                    glam::vec3(62.0, 0.0, 0.0),
+                    glam::vec2(1.0, 1.0),
+                    0.0,
+                    glam::vec2(0.5, 1.0),
+                ),
             );
 
             world.insert_component(
