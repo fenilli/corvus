@@ -1,4 +1,4 @@
-use crate::registry::{
+use crate::assets::{
     atlas::{Atlas, AtlasRegionId},
     Handle,
 };

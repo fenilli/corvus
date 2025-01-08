@@ -1,15 +1,16 @@
 use crate::{
     app::systems::RenderSystem,
-    ecs::World,
-    registry::{
+    assets::{
         atlas::{Atlas, AtlasRegionId},
         AssetRegistry,
     },
+    ecs::World,
     render::Renderer,
 };
 
 use super::{
     components::{Camera, Sprite, Transform},
+    systems::AssetSystem,
     utils::{FrameTimer, Input},
 };
 
@@ -97,6 +98,14 @@ impl App {
 
                 let (target, view) = self.renderer.create_render_target();
                 let mut encoder = self.renderer.create_encoder();
+
+                // Vault
+
+                AssetSystem::load_textures_from_assets(
+                    &self.world,
+                    &self.asset_registry,
+                    &mut self.renderer,
+                );
 
                 RenderSystem::prepare_projection(&self.world, &mut self.renderer);
                 RenderSystem::prepare_sprites(

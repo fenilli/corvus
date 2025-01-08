@@ -1,9 +1,9 @@
 use pollster::FutureExt;
 use wgpu::include_wgsl;
 
-use crate::registry::atlas::Atlas;
+use crate::assets::atlas::Atlas;
 
-use super::{resource_registry::ResourceRegistry, vertex::Vertex};
+use super::vertex::Vertex;
 
 pub struct DrawCall {
     vertex_data: Vec<Vertex>,
@@ -27,13 +27,18 @@ pub struct Renderer {
     device: wgpu::Device,
     queue: wgpu::Queue,
 
-    batch_draws: std::collections::HashMap<String, DrawCall>,
-    resource_registry: ResourceRegistry,
+    batch_draws: std::collections::HashMap<&'static str, DrawCall>,
+    textures: std::collections::HashMap<String, wgpu::Texture>,
+
     view_projection_bind_group_layout: wgpu::BindGroupLayout,
     texture_bind_group_layout: wgpu::BindGroupLayout,
+
+    texture_bind_groups: std::collections::HashMap<&'static str, wgpu::BindGroup>,
+
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     view_projection_buffer: wgpu::Buffer,
+
     pipeline: wgpu::RenderPipeline,
 }
 
@@ -83,7 +88,7 @@ impl Renderer {
         surface.configure(&device, &surface_config);
 
         let batch_draws = std::collections::HashMap::new();
-        let resource_registry = ResourceRegistry::new();
+        let textures = std::collections::HashMap::new();
 
         let view_projection_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -131,6 +136,8 @@ impl Renderer {
             ],
             push_constant_ranges: &[],
         });
+
+        let texture_bind_groups = std::collections::HashMap::new();
 
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("vertex:quad"),
@@ -188,14 +195,64 @@ impl Renderer {
             queue,
 
             batch_draws,
-            resource_registry,
+            textures,
+
             view_projection_bind_group_layout,
             texture_bind_group_layout,
+
+            texture_bind_groups,
+
             view_projection_buffer,
             vertex_buffer,
             index_buffer,
+
             pipeline,
         }
+    }
+
+    pub fn load_texture(&mut self, name: &str, image: &image::RgbaImage) {
+        if self.textures.contains_key(name) {
+            return;
+        }
+
+        let dimensions = image.dimensions();
+
+        let size = wgpu::Extent3d {
+            width: dimensions.0,
+            height: dimensions.1,
+            depth_or_array_layers: 1,
+        };
+
+        let texture_desc = &wgpu::TextureDescriptor {
+            label: Some(name),
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        };
+
+        let texture = self.device.create_texture(&texture_desc);
+
+        self.queue.write_texture(
+            wgpu::ImageCopyTexture {
+                texture: &texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &image,
+            wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(dimensions.0 * 4),
+                rows_per_image: None,
+            },
+            size,
+        );
+
+        self.textures.insert(name.to_string(), texture);
     }
 
     pub fn create_render_target(&self) -> (wgpu::SurfaceTexture, wgpu::TextureView) {
@@ -227,12 +284,9 @@ impl Renderer {
     }
 
     pub fn draw(&mut self, atlas: &Atlas, vertex_data: Vec<Vertex>) {
-        self.resource_registry
-            .create_texture(&self.device, &self.queue, atlas.path, &atlas.image);
-
         let batch = self
             .batch_draws
-            .entry(atlas.path.to_string())
+            .entry(atlas.path)
             .or_insert(DrawCall::new(Vec::new(), Vec::new()));
 
         let index_data = vec![
@@ -252,36 +306,32 @@ impl Renderer {
     pub fn render(&mut self, render_pass: &mut wgpu::RenderPass) {
         render_pass.set_pipeline(&self.pipeline);
 
-        let view_projection_bind_group = self.resource_registry.create_bind_group(
-            &self.device,
-            "bind_group:view_projection",
-            &wgpu::BindGroupDescriptor {
+        let view_projection_bind_group =
+            self.device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("Camera Bind Group"),
                 layout: &self.view_projection_bind_group_layout,
                 entries: &[wgpu::BindGroupEntry {
                     binding: 0,
                     resource: self.view_projection_buffer.as_entire_binding(),
                 }],
-            },
-        );
+            });
 
-        render_pass.set_bind_group(0, view_projection_bind_group.as_ref(), &[]);
+        render_pass.set_bind_group(0, &view_projection_bind_group, &[]);
 
         let mut offsets = (0, 0);
-        for (texture_handle, draw_call) in &self.batch_draws {
-            let texture_bind_group = self.resource_registry.create_bind_group(
-                &self.device,
-                format!("bind_group:texture_{}", texture_handle).as_str(),
-                &wgpu::BindGroupDescriptor {
-                    label: Some(&texture_handle),
+        for (&texture_handle, draw_call) in &self.batch_draws {
+            let texture_bind_group = self.texture_bind_groups.entry(texture_handle).or_insert(
+                self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some(texture_handle),
                     layout: &self.texture_bind_group_layout,
                     entries: &[
                         wgpu::BindGroupEntry {
                             binding: 0,
                             resource: wgpu::BindingResource::TextureView(
                                 &self
-                                    .resource_registry
-                                    .get_texture(&texture_handle)
+                                    .textures
+                                    .get(texture_handle)
+                                    .unwrap()
                                     .create_view(&wgpu::TextureViewDescriptor::default()),
                             ),
                         },
@@ -294,8 +344,10 @@ impl Renderer {
                             ),
                         },
                     ],
-                },
+                }),
             );
+
+            render_pass.set_bind_group(1, texture_bind_group as &wgpu::BindGroup, &[]);
 
             let vertex_data = bytemuck::cast_slice(&draw_call.vertex_data);
             let index_data = bytemuck::cast_slice(&draw_call.index_data);
@@ -305,7 +357,6 @@ impl Renderer {
             self.queue
                 .write_buffer(&self.index_buffer, offsets.1, index_data);
 
-            render_pass.set_bind_group(1, texture_bind_group.as_ref(), &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(offsets.0..));
             render_pass.set_index_buffer(
                 self.index_buffer.slice(offsets.1..),

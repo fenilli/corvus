@@ -1,7 +1,7 @@
 use crate::{
     app::components::{Camera, Color, Sprite, Transform},
+    assets::{atlas::Atlas, AssetRegistry},
     ecs::World,
-    registry::AssetRegistry,
     render::{Renderer, Vertex},
 };
 
@@ -27,7 +27,7 @@ impl RenderSystem {
                 _ => None,
             }
         }) {
-            let atlas: &std::sync::Arc<crate::registry::atlas::Atlas> =
+            let atlas: &std::sync::Arc<Atlas> =
                 asset_registry.get_atlas(&sprite.atlas_handle).unwrap();
 
             let atlas_region = atlas.get_region(&sprite.region_name).unwrap();

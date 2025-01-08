@@ -1,6 +1,6 @@
 mod app;
+mod assets;
 mod ecs;
-mod registry;
 mod render;
 
 pub use app::App;

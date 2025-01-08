@@ -1,3 +1,5 @@
+use crate::assets::Handle;
+
 #[derive(Debug)]
 pub struct AtlasRegion {
     pub x: u32,
@@ -28,16 +30,16 @@ pub enum AtlasRegionId {
 type AtlasCache = std::collections::HashMap<String, AtlasRegion>;
 
 pub struct Atlas {
-    pub image: image::RgbaImage,
     pub path: &'static str,
+    pub image: image::RgbaImage,
     pub regions: AtlasCache,
 }
 
 impl Atlas {
-    fn new(image: image::RgbaImage, path: &'static str, regions: AtlasCache) -> Self {
+    fn new(path: &'static str, image: image::RgbaImage, regions: AtlasCache) -> Self {
         Self {
-            image,
             path,
+            image,
             regions,
         }
     }
@@ -51,7 +53,7 @@ impl Atlas {
     pub fn from_regions(path: &'static str, regions: AtlasCache) -> Self {
         let image = Self::load_image(path);
 
-        Self::new(image, path, regions)
+        Self::new(path, image, regions)
     }
 
     pub fn from_grid(
@@ -89,9 +91,7 @@ impl Atlas {
             }
         }
 
-        println!("generated regions {:?}", regions);
-
-        Self::new(image, path, regions)
+        Self::new(path, image, regions)
     }
 
     pub fn get_region(&self, atlas_region_id: &AtlasRegionId) -> Option<&AtlasRegion> {
@@ -124,5 +124,38 @@ impl Atlas {
         let v_max = (atlas_region.y + atlas_region.height) as f32 / height as f32;
 
         (u_min, v_min, u_max, v_max)
+    }
+}
+
+type Cache<K, V> = std::collections::HashMap<K, std::sync::Arc<V>>;
+
+pub struct AtlasRegistry {
+    atlases: Cache<u64, Atlas>,
+    next_id: u64,
+}
+
+impl AtlasRegistry {
+    pub fn new() -> Self {
+        Self {
+            atlases: Cache::new(),
+            next_id: 0,
+        }
+    }
+
+    pub fn insert(&mut self, atlas: Atlas) -> Handle<Atlas> {
+        let handle: Handle<Atlas> = Handle::new(self.next_id);
+
+        if self.atlases.contains_key(&handle.id) {
+            panic!("An atlas with the name '{}' already exists.", atlas.path);
+        }
+
+        self.atlases.insert(handle.id, std::sync::Arc::new(atlas));
+        self.next_id += 1;
+
+        handle
+    }
+
+    pub fn get(&self, handle: &Handle<Atlas>) -> Option<&std::sync::Arc<Atlas>> {
+        self.atlases.get(&handle.id)
     }
 }
