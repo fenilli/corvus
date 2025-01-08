@@ -1,15 +1,12 @@
 use crate::{
     app::systems::RenderSystem,
-    assets::{
-        atlas::{Atlas, AtlasRegionId},
-        AssetRegistry,
-    },
+    assets::{atlas::Atlas, AssetRegistry},
     ecs::World,
     render::Renderer,
 };
 
 use super::{
-    components::{Animation, AnimationSet, AnimationState, Camera, Sprite, Transform},
+    components::{AnimationSet, AnimationState, Camera, Sprite, Transform},
     systems::{AnimationSystem, AssetSystem},
     utils::{FrameTimer, Input},
 };
@@ -47,53 +44,6 @@ impl App {
                 camera,
                 Camera::new(glam::Vec2::new(0.0, 0.0), window_size, 1.0),
             );
-
-            let e1 = world.spawn();
-            world.insert_component(
-                e1,
-                Transform::new(
-                    glam::vec3(62.0, 0.0, 0.0),
-                    glam::vec2(1.0, 1.0),
-                    0.0,
-                    glam::vec2(0.5, 1.0),
-                ),
-            );
-
-            world.insert_component(
-                e1,
-                Sprite::new(
-                    asset_registry.load_atlas(Atlas::from_grid(
-                        "assets/uv_test.png",
-                        124,
-                        124,
-                        0,
-                        0,
-                    )),
-                    AtlasRegionId::Grid((0, 0)),
-                ),
-            );
-
-            let mut animation_set = AnimationSet::new();
-            animation_set.add_animation(
-                "idle",
-                Animation::with_duration(
-                    vec![AtlasRegionId::Grid((0, 0)), AtlasRegionId::Grid((0, 1))],
-                    true,
-                    35.0,
-                ),
-            );
-
-            animation_set.add_animation(
-                "walk",
-                Animation::with_duration(
-                    vec![AtlasRegionId::Grid((1, 0)), AtlasRegionId::Grid((1, 1))],
-                    true,
-                    35.0,
-                ),
-            );
-
-            world.insert_component(e1, animation_set);
-            world.insert_component(e1, AnimationState::new("walk"));
         }
 
         let renderer = Renderer::new(window.clone());
@@ -127,8 +77,6 @@ impl App {
 
                 let (target, view) = self.renderer.create_render_target();
                 let mut encoder = self.renderer.create_encoder();
-
-                // Vault
 
                 AssetSystem::load_textures_from_assets(
                     &self.world,

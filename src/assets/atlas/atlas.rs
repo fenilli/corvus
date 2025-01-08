@@ -23,22 +23,18 @@ impl AtlasRegion {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum AtlasRegionId {
-    Named(&'static str),
-    Grid((u32, u32)),
-}
-
-type AtlasCache = std::collections::HashMap<String, AtlasRegion>;
-
 pub struct Atlas {
     pub path: &'static str,
     pub image: image::RgbaImage,
-    pub regions: AtlasCache,
+    pub regions: std::collections::HashMap<String, AtlasRegion>,
 }
 
 impl Atlas {
-    fn new(path: &'static str, image: image::RgbaImage, regions: AtlasCache) -> Self {
+    pub fn new(
+        path: &'static str,
+        image: image::RgbaImage,
+        regions: std::collections::HashMap<String, AtlasRegion>,
+    ) -> Self {
         Self {
             path,
             image,
@@ -52,66 +48,12 @@ impl Atlas {
         image
     }
 
-    pub fn from_regions(path: &'static str, regions: AtlasCache) -> Self {
-        let image = Self::load_image(path);
-
-        Self::new(path, image, regions)
+    pub fn get_region(&self, region_id: &'static str) -> Option<&AtlasRegion> {
+        self.regions.get(region_id)
     }
 
-    pub fn from_grid(
-        path: &'static str,
-        cell_width: u32,
-        cell_height: u32,
-        spacing_x: u32,
-        spacing_y: u32,
-    ) -> Self {
-        let image = Self::load_image(path);
-
-        assert!(
-            cell_width > 0 && cell_height > 0,
-            "Cell dimensions must be positive."
-        );
-        assert!(
-            cell_width + spacing_x <= image.width() && cell_height + spacing_y <= image.height(),
-            "Grid cells with spacing must fit within the image dimensions."
-        );
-
-        let cols = (image.width() + spacing_x) / (cell_width + spacing_x);
-        let rows = (image.height() + spacing_y) / (cell_height + spacing_y);
-
-        let mut regions = AtlasCache::new();
-
-        for row in 0..rows {
-            for col in 0..cols {
-                let x = col * (cell_width + spacing_x);
-                let y = row * (cell_height + spacing_y);
-
-                regions.insert(
-                    format!("{}_{}", col, row),
-                    AtlasRegion::new(x, y, cell_width, cell_height),
-                );
-            }
-        }
-
-        Self::new(path, image, regions)
-    }
-
-    pub fn get_region(&self, atlas_region_id: &AtlasRegionId) -> Option<&AtlasRegion> {
-        let handle = match atlas_region_id {
-            AtlasRegionId::Grid((col, row)) => format!("{}_{}", col, row),
-            AtlasRegionId::Named(name) => name.to_string(),
-        };
-
-        self.regions.get(&handle)
-    }
-
-    pub fn calculate_uv(&self, atlas_region_id: &AtlasRegionId) -> (f32, f32, f32, f32) {
-        let handle = match atlas_region_id {
-            AtlasRegionId::Grid((col, row)) => format!("{}_{}", col, row),
-            AtlasRegionId::Named(name) => name.to_string(),
-        };
-
-        let Some(atlas_region) = self.regions.get(&handle) else {
+    pub fn calculate_uv(&self, region_id: &'static str) -> (f32, f32, f32, f32) {
+        let Some(atlas_region) = self.get_region(region_id) else {
             return (0.0, 0.0, 1.0, 1.0);
         };
 

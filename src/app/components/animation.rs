@@ -1,12 +1,10 @@
-use crate::assets::atlas::AtlasRegionId;
-
 pub struct AnimationFrame {
-    pub region_id: AtlasRegionId,
+    pub region_id: &'static str,
     pub duration: f32,
 }
 
 impl AnimationFrame {
-    pub fn new(region_id: AtlasRegionId, duration: f32) -> Self {
+    pub fn new(region_id: &'static str, duration: f32) -> Self {
         Self {
             region_id,
             duration,
@@ -24,7 +22,7 @@ impl Animation {
         Self { frames, looping }
     }
 
-    pub fn with_duration(regions_ids: Vec<AtlasRegionId>, looping: bool, duration: f32) -> Self {
+    pub fn with_duration(regions_ids: Vec<&'static str>, looping: bool, duration: f32) -> Self {
         let frames = regions_ids
             .iter()
             .map(|&region_id| AnimationFrame::new(region_id, duration))
