@@ -5,14 +5,14 @@ use crate::assets::{
 
 pub struct Sprite {
     pub atlas_handle: Handle<Atlas>,
-    pub region_name: AtlasRegionId,
+    pub region_id: AtlasRegionId,
 }
 
 impl Sprite {
-    pub fn new(atlas_handle: Handle<Atlas>, region_name: AtlasRegionId) -> Self {
+    pub fn new(atlas_handle: Handle<Atlas>, region_id: AtlasRegionId) -> Self {
         Self {
             atlas_handle,
-            region_name,
+            region_id,
         }
     }
 }

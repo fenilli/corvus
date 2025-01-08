@@ -1,6 +1,6 @@
 use crate::assets::Handle;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct AtlasRegion {
     pub x: u32,
     pub y: u32,
@@ -22,6 +22,8 @@ impl AtlasRegion {
         (self.width, self.height)
     }
 }
+
+#[derive(Debug, Clone, Copy)]
 pub enum AtlasRegionId {
     Named(&'static str),
     Grid((u32, u32)),

@@ -9,8 +9,10 @@ use crate::{
 };
 
 use super::{
-    components::{Camera, Sprite, Transform},
-    systems::AssetSystem,
+    components::{
+        Animation, AnimationFrame, AnimationSet, AnimationState, Camera, Sprite, Transform,
+    },
+    systems::{AnimationSystem, AssetSystem},
     utils::{FrameTimer, Input},
 };
 
@@ -36,6 +38,8 @@ impl App {
         world.register_component::<Camera>();
         world.register_component::<Sprite>();
         world.register_component::<Transform>();
+        world.register_component::<AnimationSet>();
+        world.register_component::<AnimationState>();
 
         {
             let window_size = window.inner_size();
@@ -65,6 +69,28 @@ impl App {
                     AtlasRegionId::Grid((0, 0)),
                 ),
             );
+
+            let mut animation_set = AnimationSet::new();
+            animation_set.add_animation(
+                "idle",
+                Animation::with_duration(
+                    vec![AtlasRegionId::Grid((0, 0)), AtlasRegionId::Grid((0, 1))],
+                    true,
+                    35.0,
+                ),
+            );
+
+            animation_set.add_animation(
+                "walk",
+                Animation::with_duration(
+                    vec![AtlasRegionId::Grid((1, 0)), AtlasRegionId::Grid((1, 1))],
+                    true,
+                    35.0,
+                ),
+            );
+
+            world.insert_component(e1, animation_set);
+            world.insert_component(e1, AnimationState::new("walk"));
         }
 
         let renderer = Renderer::new(window.clone());
@@ -105,6 +131,11 @@ impl App {
                     &self.world,
                     &self.asset_registry,
                     &mut self.renderer,
+                );
+
+                AnimationSystem::run_animations(
+                    &self.world,
+                    self.frame_timer.interpolation_alpha(),
                 );
 
                 RenderSystem::prepare_projection(&self.world, &mut self.renderer);

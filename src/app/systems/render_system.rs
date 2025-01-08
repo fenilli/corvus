@@ -30,8 +30,8 @@ impl RenderSystem {
             let atlas: &std::sync::Arc<Atlas> =
                 asset_registry.get_atlas(&sprite.atlas_handle).unwrap();
 
-            let atlas_region = atlas.get_region(&sprite.region_name).unwrap();
-            let (u_min, v_min, u_max, v_max) = atlas.calculate_uv(&sprite.region_name);
+            let atlas_region = atlas.get_region(&sprite.region_id).unwrap();
+            let (u_min, v_min, u_max, v_max) = atlas.calculate_uv(&sprite.region_id);
 
             let vertex_data: Vec<Vertex> = [[-1.0, 1.0], [-1.0, -1.0], [1.0, -1.0], [1.0, 1.0]]
                 .iter()

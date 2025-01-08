@@ -89,11 +89,17 @@ impl World {
 
     pub fn get_component<T: Component>(&self, entity: Entity) -> Option<Ref<T>> {
         let Some(any_vec) = self.components.get(&TypeId::of::<T>()) else {
-            return None;
+            panic!(
+                "Trying to access a component that was not registered: '{}'",
+                std::any::type_name::<T>()
+            )
         };
 
         let Some(storage) = any_vec.as_any().downcast_ref::<ComponentVec<T>>() else {
-            return None;
+            panic!(
+                "Trying to access a component that was not registered: '{}'",
+                std::any::type_name::<T>()
+            )
         };
 
         storage.get(entity.id)
@@ -101,11 +107,17 @@ impl World {
 
     pub fn get_component_mut<T: Component>(&self, entity: Entity) -> Option<RefMut<T>> {
         let Some(any_vec) = self.components.get(&TypeId::of::<T>()) else {
-            return None;
+            panic!(
+                "Trying to access a component that was not registered: '{}'",
+                std::any::type_name::<T>()
+            )
         };
 
         let Some(storage) = any_vec.as_any().downcast_ref::<ComponentVec<T>>() else {
-            return None;
+            panic!(
+                "Trying to access a component that was not registered: '{}'",
+                std::any::type_name::<T>()
+            )
         };
 
         storage.get_mut(entity.id)
