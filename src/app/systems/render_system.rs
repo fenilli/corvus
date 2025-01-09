@@ -27,10 +27,14 @@ impl RenderSystem {
                 _ => None,
             }
         }) {
-            let atlas: &std::sync::Arc<Atlas> =
-                asset_registry.get_atlas(&sprite.atlas_handle).unwrap();
+            let atlas: &std::sync::Arc<Atlas> = asset_registry
+                .get_atlas(&sprite.atlas_handle)
+                .expect("sprite should contain loaded atlas");
 
-            let atlas_region = atlas.get_region(&sprite.region_id).unwrap();
+            let atlas_region = atlas
+                .get_region(&sprite.region_id)
+                .expect("atlas should contain region from sprite");
+
             let (u_min, v_min, u_max, v_max) = atlas.calculate_uv(&sprite.region_id);
 
             let vertex_data: Vec<Vertex> = [[-1.0, 1.0], [-1.0, -1.0], [1.0, -1.0], [1.0, 1.0]]

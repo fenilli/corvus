@@ -44,6 +44,34 @@ impl App {
                 camera,
                 Camera::new(glam::Vec2::new(0.0, 0.0), window_size, 1.0),
             );
+
+            let e1 = world.spawn();
+            world.insert_component(
+                e1,
+                Transform::new(
+                    glam::vec3(window_size.width as f32 / 2.0, 0.0, 0.0),
+                    glam::vec2(1.0, 1.0),
+                    0.0,
+                    glam::vec2(0.0, 1.0),
+                ),
+            );
+
+            world.insert_component(
+                e1,
+                Sprite::new(
+                    asset_registry.load_atlas(Atlas::from_grid(
+                        "assets/idle.png",
+                        16,
+                        16,
+                        32,
+                        32,
+                        3,
+                        4,
+                        Some(|row, col| format!("idle_{}_{}", row, col)),
+                    )),
+                    "idle_0_3",
+                ),
+            );
         }
 
         let renderer = Renderer::new(window.clone());

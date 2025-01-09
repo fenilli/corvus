@@ -30,7 +30,7 @@ pub struct Atlas {
 }
 
 impl Atlas {
-    pub fn new(
+    fn new(
         path: &'static str,
         image: image::RgbaImage,
         regions: std::collections::HashMap<String, AtlasRegion>,
@@ -46,6 +46,67 @@ impl Atlas {
         let image = image::open(path).unwrap().to_rgba8();
 
         image
+    }
+
+    pub fn from_grid(
+        path: &'static str,
+        region_width: u32,
+        region_height: u32,
+        padding_x: u32,
+        padding_y: u32,
+        rows: u32,
+        cols: u32,
+        name_generator: Option<fn(u32, u32) -> String>,
+    ) -> Self {
+        assert!(cols > 0, "The number of columns must be greater than 0.");
+        assert!(rows > 0, "The number of rows must be greater than 0.");
+
+        let image = Self::load_image(path);
+        let image_width = image.width();
+        let image_height = image.height();
+
+        assert!(
+            region_width > 0
+                && region_width <= image_width
+                && region_height > 0
+                && region_height <= image_height,
+            "Region dimensions must be greater than 0 and fit within the image dimensions."
+        );
+
+        let grid_width = region_width * cols;
+        let grid_height = region_height * rows;
+
+        assert!(
+            grid_width <= image_width && grid_height <= image_height,
+            "Grid dimensions exceed the image dimensions."
+        );
+
+        let name_generator = name_generator.unwrap_or(|row, col| format!("{}_{}", row, col));
+
+        let mut regions = std::collections::HashMap::new();
+
+        for row in 0..rows {
+            for col in 0..cols {
+                println!(
+                    "padding_x: {}, col: {}, region_width: {}",
+                    padding_x, col, region_width
+                );
+                println!(
+                    "padding_y: {}, row: {}, region_height: {}",
+                    padding_y, row, region_height
+                );
+
+                let x = padding_x + col * (region_width + 2 * padding_x);
+                let y = padding_y + row * (region_height + 2 * padding_y);
+                let name = name_generator(row, col);
+
+                println!("Region: {}, Coordinates: ({}, {})", name, x, y);
+
+                regions.insert(name, AtlasRegion::new(x, y, region_width, region_height));
+            }
+        }
+
+        Self::new(path, image, regions)
     }
 
     pub fn get_region(&self, region_id: &'static str) -> Option<&AtlasRegion> {
