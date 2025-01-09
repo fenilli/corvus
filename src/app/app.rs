@@ -6,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    components::{AnimationSet, AnimationState, Camera, Sprite, Transform},
+    components::{AnimationSet, AnimationState, Camera, Flip, Sprite, Transform},
     systems::{AnimationSystem, AssetSystem},
     utils::{FrameTimer, Input},
 };
@@ -35,6 +35,7 @@ impl App {
         world.register_component::<Transform>();
         world.register_component::<AnimationSet>();
         world.register_component::<AnimationState>();
+        world.register_component::<Flip>();
 
         {
             let window_size = window.inner_size();
@@ -72,6 +73,8 @@ impl App {
                     "idle_0_3",
                 ),
             );
+
+            world.insert_component(e1, Flip::new(true, false));
         }
 
         let renderer = Renderer::new(window.clone());

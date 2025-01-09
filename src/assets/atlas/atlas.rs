@@ -87,15 +87,6 @@ impl Atlas {
 
         for row in 0..rows {
             for col in 0..cols {
-                println!(
-                    "padding_x: {}, col: {}, region_width: {}",
-                    padding_x, col, region_width
-                );
-                println!(
-                    "padding_y: {}, row: {}, region_height: {}",
-                    padding_y, row, region_height
-                );
-
                 let x = padding_x + col * (region_width + 2 * padding_x);
                 let y = padding_y + row * (region_height + 2 * padding_y);
                 let name = name_generator(row, col);

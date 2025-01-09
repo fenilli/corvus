@@ -1,5 +1,5 @@
 use crate::{
-    app::components::{Camera, Color, Sprite, Transform},
+    app::components::{Camera, Color, Flip, Sprite, Transform},
     assets::{atlas::Atlas, AssetRegistry},
     ecs::World,
     render::{Renderer, Vertex},
@@ -18,12 +18,12 @@ impl RenderSystem {
     }
 
     pub fn prepare_sprites(world: &World, asset_registry: &AssetRegistry, renderer: &mut Renderer) {
-        for (transform, sprite) in world.entities().filter_map(|entity| {
+        for (entity, transform, sprite) in world.entities().filter_map(|entity| {
             match (
                 world.get_component::<Transform>(entity),
                 world.get_component::<Sprite>(entity),
             ) {
-                (Some(transform), Some(sprite)) => Some((transform, sprite)),
+                (Some(transform), Some(sprite)) => Some((entity, transform, sprite)),
                 _ => None,
             }
         }) {
@@ -35,7 +35,21 @@ impl RenderSystem {
                 .get_region(&sprite.region_id)
                 .expect("atlas should contain region from sprite");
 
-            let (u_min, v_min, u_max, v_max) = atlas.calculate_uv(&sprite.region_id);
+            let (u_min, v_min, u_max, v_max) = {
+                let mut uvs = atlas.calculate_uv(&sprite.region_id);
+
+                if let Some(flip) = world.get_component::<Flip>(entity) {
+                    if flip.horizontal {
+                        uvs = (uvs.2, uvs.1, uvs.0, uvs.3);
+                    }
+
+                    if flip.vertical {
+                        uvs = (uvs.0, uvs.3, uvs.2, uvs.1);
+                    }
+                }
+
+                uvs
+            };
 
             let vertex_data: Vec<Vertex> = [[-1.0, 1.0], [-1.0, -1.0], [1.0, -1.0], [1.0, 1.0]]
                 .iter()
