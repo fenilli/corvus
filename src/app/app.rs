@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::{
     app::systems::RenderSystem,
     assets::{atlas::Atlas, AssetRegistry},
@@ -10,6 +12,49 @@ use super::{
     systems::{AnimationSystem, AssetSystem},
     utils::{FrameTimer, Input},
 };
+
+fn create_animated_entity(
+    world: &mut World,
+    asset_registry: &mut AssetRegistry,
+    position: glam::Vec3,
+) {
+    let e1 = world.spawn();
+    world.insert_component(
+        e1,
+        Transform::new(position, glam::vec2(1.0, 1.0), 0.0, glam::vec2(0.0, 1.0)),
+    );
+
+    world.insert_component(
+        e1,
+        Sprite::new(
+            asset_registry.load_atlas(Atlas::from_grid(
+                "assets/idle.png",
+                16,
+                16,
+                32,
+                32,
+                3,
+                4,
+                Some(|row, col| format!("idle_{}_{}", row, col)),
+            )),
+            "idle_0_0",
+        ),
+    );
+
+    world.insert_component(e1, Flip::new(false, false));
+
+    let mut animation_set = AnimationSet::new();
+    animation_set.add_animation(
+        "idle_side",
+        Animation::with_duration(
+            vec!["idle_0_0", "idle_0_1", "idle_0_2", "idle_0_3"],
+            true,
+            5.0,
+        ),
+    );
+    world.insert_component(e1, animation_set);
+    world.insert_component(e1, AnimationState::new("idle_side"));
+}
 
 pub struct App {
     input: Input,
@@ -29,13 +74,7 @@ impl App {
         let input = Input::new();
         let frame_timer = FrameTimer::new(60);
         let mut asset_registry = AssetRegistry::new();
-        let mut world = World::new();
-        world.register_component::<Camera>();
-        world.register_component::<Sprite>();
-        world.register_component::<Transform>();
-        world.register_component::<AnimationSet>();
-        world.register_component::<AnimationState>();
-        world.register_component::<Flip>();
+        let mut world = App::register_all_components();
 
         {
             let window_size = window.inner_size();
@@ -46,47 +85,18 @@ impl App {
                 Camera::new(glam::Vec2::new(0.0, 0.0), window_size, 1.0),
             );
 
-            let e1 = world.spawn();
-            world.insert_component(
-                e1,
-                Transform::new(
-                    glam::vec3(window_size.width as f32 / 2.0, 0.0, 0.0),
-                    glam::vec2(1.0, 1.0),
-                    0.0,
-                    glam::vec2(0.0, 1.0),
-                ),
-            );
-
-            world.insert_component(
-                e1,
-                Sprite::new(
-                    asset_registry.load_atlas(Atlas::from_grid(
-                        "assets/idle.png",
-                        16,
-                        16,
-                        32,
-                        32,
-                        3,
-                        4,
-                        Some(|row, col| format!("idle_{}_{}", row, col)),
-                    )),
-                    "idle_0_3",
-                ),
-            );
-
-            world.insert_component(e1, Flip::new(true, false));
-
-            let mut animation_set = AnimationSet::new();
-            animation_set.add_animation(
-                "idle_side",
-                Animation::with_duration(
-                    vec!["idle_0_0", "idle_0_1", "idle_0_2", "idle_0_3"],
-                    true,
-                    5.0,
-                ),
-            );
-            world.insert_component(e1, animation_set);
-            world.insert_component(e1, AnimationState::new("idle_side"));
+            let mut rng = rand::thread_rng();
+            for _ in 0..300 {
+                create_animated_entity(
+                    &mut world,
+                    &mut asset_registry,
+                    glam::Vec3::new(
+                        rng.gen_range(16.0..window_size.width as f32),
+                        rng.gen_range(0.0..window_size.height as f32 - 16.0),
+                        0.0,
+                    ),
+                )
+            }
         }
 
         let renderer = Renderer::new(window.clone());
@@ -101,6 +111,19 @@ impl App {
 
             window,
         }
+    }
+
+    fn register_all_components() -> World {
+        let mut world = World::new();
+
+        world.register_component::<Camera>();
+        world.register_component::<Sprite>();
+        world.register_component::<Transform>();
+        world.register_component::<AnimationSet>();
+        world.register_component::<AnimationState>();
+        world.register_component::<Flip>();
+
+        world
     }
 
     pub fn window_event(

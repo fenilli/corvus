@@ -18,15 +18,32 @@ impl RenderSystem {
     }
 
     pub fn prepare_sprites(world: &World, asset_registry: &AssetRegistry, renderer: &mut Renderer) {
-        for (entity, transform, sprite) in world.entities().filter_map(|entity| {
-            match (
-                world.get_component::<Transform>(entity),
-                world.get_component::<Sprite>(entity),
-            ) {
-                (Some(transform), Some(sprite)) => Some((entity, transform, sprite)),
-                _ => None,
-            }
-        }) {
+        let mut sprites = world
+            .entities()
+            .filter_map(|entity| {
+                let transform = world.get_component::<Transform>(entity)?;
+                let sprite = world.get_component::<Sprite>(entity)?;
+                let flip = world.get_component::<Flip>(entity);
+
+                Some((transform, sprite, flip))
+            })
+            .collect::<Vec<_>>();
+
+        sprites.sort_by(|(a_transform, _, _), (b_transform, _, _)| {
+            a_transform
+                .position
+                .z
+                .partial_cmp(&b_transform.position.z)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| {
+                    let a_y = a_transform.position.y - (a_transform.origin.y * a_transform.scale.y);
+                    let b_y = b_transform.position.y - (b_transform.origin.y * b_transform.scale.y);
+
+                    b_y.partial_cmp(&a_y).unwrap_or(std::cmp::Ordering::Equal)
+                })
+        });
+
+        for (transform, sprite, flip) in sprites {
             let atlas: &std::sync::Arc<Atlas> = asset_registry
                 .get_atlas(&sprite.atlas_handle)
                 .expect("sprite should contain loaded atlas");
@@ -38,7 +55,7 @@ impl RenderSystem {
             let (u_min, v_min, u_max, v_max) = {
                 let mut uvs = atlas.calculate_uv(&sprite.region_id);
 
-                if let Some(flip) = world.get_component::<Flip>(entity) {
+                if let Some(flip) = flip {
                     if flip.horizontal {
                         uvs = (uvs.2, uvs.1, uvs.0, uvs.3);
                     }

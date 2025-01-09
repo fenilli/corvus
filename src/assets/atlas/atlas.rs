@@ -91,8 +91,6 @@ impl Atlas {
                 let y = padding_y + row * (region_height + 2 * padding_y);
                 let name = name_generator(row, col);
 
-                println!("Region: {}, Coordinates: ({}, {})", name, x, y);
-
                 regions.insert(name, AtlasRegion::new(x, y, region_width, region_height));
             }
         }
