@@ -6,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    components::{AnimationSet, AnimationState, Camera, Flip, Sprite, Transform},
+    components::{Animation, AnimationSet, AnimationState, Camera, Flip, Sprite, Transform},
     systems::{AnimationSystem, AssetSystem},
     utils::{FrameTimer, Input},
 };
@@ -75,6 +75,18 @@ impl App {
             );
 
             world.insert_component(e1, Flip::new(true, false));
+
+            let mut animation_set = AnimationSet::new();
+            animation_set.add_animation(
+                "idle_side",
+                Animation::with_duration(
+                    vec!["idle_0_0", "idle_0_1", "idle_0_2", "idle_0_3"],
+                    true,
+                    5.0,
+                ),
+            );
+            world.insert_component(e1, animation_set);
+            world.insert_component(e1, AnimationState::new("idle_side"));
         }
 
         let renderer = Renderer::new(window.clone());
