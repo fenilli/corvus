@@ -2,7 +2,7 @@ use rand::Rng;
 
 use crate::{
     app::systems::RenderSystem,
-    assets::{atlas::Atlas, AssetRegistry},
+    assets::{AssetRegistry, AtlasDescriptor},
     ecs::World,
     render::Renderer,
 };
@@ -12,49 +12,6 @@ use super::{
     systems::{AnimationSystem, AssetSystem},
     utils::{FrameTimer, Input},
 };
-
-fn create_animated_entity(
-    world: &mut World,
-    asset_registry: &mut AssetRegistry,
-    position: glam::Vec3,
-) {
-    let e1 = world.spawn();
-    world.insert_component(
-        e1,
-        Transform::new(position, glam::vec2(1.0, 1.0), 0.0, glam::vec2(0.0, 1.0)),
-    );
-
-    world.insert_component(
-        e1,
-        Sprite::new(
-            asset_registry.load_atlas(Atlas::from_grid(
-                "assets/idle.png",
-                16,
-                16,
-                32,
-                32,
-                3,
-                4,
-                Some(|row, col| format!("idle_{}_{}", row, col)),
-            )),
-            "idle_0_0",
-        ),
-    );
-
-    world.insert_component(e1, Flip::new(false, false));
-
-    let mut animation_set = AnimationSet::new();
-    animation_set.add_animation(
-        "idle_side",
-        Animation::with_duration(
-            vec!["idle_0_0", "idle_0_1", "idle_0_2", "idle_0_3"],
-            true,
-            5.0,
-        ),
-    );
-    world.insert_component(e1, animation_set);
-    world.insert_component(e1, AnimationState::new("idle_side"));
-}
 
 pub struct App {
     input: Input,
@@ -85,18 +42,102 @@ impl App {
                 Camera::new(glam::Vec2::new(0.0, 0.0), window_size, 1.0),
             );
 
+            let start = std::time::Instant::now();
             let mut rng = rand::thread_rng();
-            for _ in 0..300 {
-                create_animated_entity(
-                    &mut world,
-                    &mut asset_registry,
-                    glam::Vec3::new(
-                        rng.gen_range(16.0..window_size.width as f32),
-                        rng.gen_range(0.0..window_size.height as f32 - 16.0),
+            for _ in 0..1000 {
+                let e = world.spawn();
+                world.insert_component(
+                    e,
+                    Transform::new(
+                        glam::vec3(
+                            rng.gen_range(16.0..window_size.width as f32),
+                            rng.gen_range(0.0..window_size.height as f32 - 16.0),
+                            0.0,
+                        ),
+                        glam::vec2(1.0, 1.0),
                         0.0,
+                        glam::vec2(0.0, 1.0),
                     ),
-                )
+                );
+
+                world.insert_component(
+                    e,
+                    Sprite::new(
+                        asset_registry.load_atlas(
+                            "assets/idle.png",
+                            AtlasDescriptor {
+                                region_width: 16,
+                                region_height: 16,
+                                padding_x: 32,
+                                padding_y: 32,
+                                rows: 3,
+                                cols: 4,
+                            },
+                        ),
+                        "0_0",
+                    ),
+                );
+
+                world.insert_component(e, Flip::new(false, false));
+
+                let mut animation_set = AnimationSet::new();
+                animation_set.add_animation(
+                    "idle_side",
+                    Animation::with_duration(vec!["0_0", "0_1", "0_2", "0_3"], true, 5.0),
+                );
+                world.insert_component(e, animation_set);
+                world.insert_component(e, AnimationState::new("idle_side"));
             }
+
+            for _ in 0..1000 {
+                let e = world.spawn();
+                world.insert_component(
+                    e,
+                    Transform::new(
+                        glam::vec3(
+                            rng.gen_range(16.0..window_size.width as f32),
+                            rng.gen_range(0.0..window_size.height as f32 - 16.0),
+                            0.0,
+                        ),
+                        glam::vec2(1.0, 1.0),
+                        0.0,
+                        glam::vec2(0.0, 1.0),
+                    ),
+                );
+
+                world.insert_component(
+                    e,
+                    Sprite::new(
+                        asset_registry.load_atlas(
+                            "assets/hurt.png",
+                            AtlasDescriptor {
+                                region_width: 16,
+                                region_height: 16,
+                                padding_x: 32,
+                                padding_y: 32,
+                                rows: 3,
+                                cols: 4,
+                            },
+                        ),
+                        "0_0",
+                    ),
+                );
+
+                world.insert_component(e, Flip::new(false, false));
+
+                let mut animation_set = AnimationSet::new();
+                animation_set.add_animation(
+                    "hurt_side",
+                    Animation::with_duration(vec!["0_0", "0_1", "0_2", "0_3"], true, 5.0),
+                );
+                world.insert_component(e, animation_set);
+                world.insert_component(e, AnimationState::new("hurt_side"));
+            }
+
+            println!(
+                "load time: {}",
+                std::time::Instant::now().duration_since(start).as_secs()
+            );
         }
 
         let renderer = Renderer::new(window.clone());

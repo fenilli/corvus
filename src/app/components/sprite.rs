@@ -1,4 +1,4 @@
-use crate::assets::{atlas::Atlas, Handle};
+use crate::assets::{Atlas, Handle};
 
 pub struct Sprite {
     pub atlas_handle: Handle<Atlas>,

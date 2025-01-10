@@ -16,7 +16,7 @@ impl AssetSystem {
                 continue;
             };
 
-            renderer.load_texture(&atlas.path, &atlas.image);
+            renderer.load_texture(sprite.atlas_handle.id, &atlas.image);
         }
     }
 }

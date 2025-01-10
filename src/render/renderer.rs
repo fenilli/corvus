@@ -1,8 +1,6 @@
 use pollster::FutureExt;
 use wgpu::include_wgsl;
 
-use crate::assets::atlas::Atlas;
-
 use super::vertex::Vertex;
 
 pub struct DrawCall {
@@ -28,7 +26,7 @@ pub struct Renderer {
     queue: wgpu::Queue,
 
     batch_draws: std::collections::HashMap<&'static str, DrawCall>,
-    textures: std::collections::HashMap<String, wgpu::Texture>,
+    textures: std::collections::HashMap<&'static str, wgpu::Texture>,
 
     view_projection_bind_group_layout: wgpu::BindGroupLayout,
     texture_bind_group_layout: wgpu::BindGroupLayout,
@@ -210,8 +208,8 @@ impl Renderer {
         }
     }
 
-    pub fn load_texture(&mut self, name: &str, image: &image::RgbaImage) {
-        if self.textures.contains_key(name) {
+    pub fn load_texture(&mut self, texture_id: &'static str, image: &image::RgbaImage) {
+        if self.textures.contains_key(texture_id) {
             return;
         }
 
@@ -224,7 +222,7 @@ impl Renderer {
         };
 
         let texture_desc = &wgpu::TextureDescriptor {
-            label: Some(name),
+            label: None,
             size,
             mip_level_count: 1,
             sample_count: 1,
@@ -252,7 +250,7 @@ impl Renderer {
             size,
         );
 
-        self.textures.insert(name.to_string(), texture);
+        self.textures.insert(texture_id, texture);
     }
 
     pub fn create_render_target(&self) -> (wgpu::SurfaceTexture, wgpu::TextureView) {
@@ -283,10 +281,10 @@ impl Renderer {
         );
     }
 
-    pub fn draw(&mut self, atlas: &Atlas, vertex_data: Vec<Vertex>) {
+    pub fn draw(&mut self, texture_id: &'static str, vertex_data: Vec<Vertex>) {
         let batch = self
             .batch_draws
-            .entry(atlas.path)
+            .entry(texture_id)
             .or_insert(DrawCall::new(Vec::new(), Vec::new()));
 
         let index_data = vec![
@@ -322,7 +320,7 @@ impl Renderer {
         for (&texture_handle, draw_call) in &self.batch_draws {
             let texture_bind_group = self.texture_bind_groups.entry(texture_handle).or_insert(
                 self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    label: Some(texture_handle),
+                    label: None,
                     layout: &self.texture_bind_group_layout,
                     entries: &[
                         wgpu::BindGroupEntry {
@@ -330,7 +328,7 @@ impl Renderer {
                             resource: wgpu::BindingResource::TextureView(
                                 &self
                                     .textures
-                                    .get(texture_handle)
+                                    .get(&texture_handle)
                                     .unwrap()
                                     .create_view(&wgpu::TextureViewDescriptor::default()),
                             ),

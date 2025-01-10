@@ -1,11 +1,11 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy)]
 pub struct Handle<T> {
-    pub id: u64,
+    pub id: &'static str,
     _marker: std::marker::PhantomData<T>,
 }
 
 impl<T> Handle<T> {
-    pub fn new(id: u64) -> Self {
+    pub fn new(id: &'static str) -> Self {
         Self {
             id,
             _marker: std::marker::PhantomData,

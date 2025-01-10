@@ -1,6 +1,6 @@
 use crate::{
     app::components::{Camera, Color, Flip, Sprite, Transform},
-    assets::{atlas::Atlas, AssetRegistry},
+    assets::AssetRegistry,
     ecs::World,
     render::{Renderer, Vertex},
 };
@@ -44,7 +44,7 @@ impl RenderSystem {
         });
 
         for (transform, sprite, flip) in sprites {
-            let atlas: &std::sync::Arc<Atlas> = asset_registry
+            let atlas = asset_registry
                 .get_atlas(&sprite.atlas_handle)
                 .expect("sprite should contain loaded atlas");
 
@@ -94,7 +94,7 @@ impl RenderSystem {
                 })
                 .collect();
 
-            renderer.draw(atlas, vertex_data);
+            renderer.draw(sprite.atlas_handle.id, vertex_data);
         }
     }
 }
