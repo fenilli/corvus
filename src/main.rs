@@ -2,44 +2,27 @@ use winit::{
     application::ApplicationHandler, dpi::PhysicalSize, event_loop::EventLoop, window::Window,
 };
 
-use corvus::App;
-
-struct AppDescriptor {
-    pub title: &'static str,
-    pub size: PhysicalSize<u32>,
-}
-
-enum AppState {
-    Initializing(AppDescriptor),
-    Running(App),
-}
+use corvus::Game;
 
 struct WinitApp {
-    app: AppState,
+    game: Option<Game>,
 }
 
 impl WinitApp {
-    pub fn new(descriptor: AppDescriptor) -> Self {
-        Self {
-            app: AppState::Initializing(descriptor),
-        }
+    pub fn new() -> Self {
+        Self { game: None }
     }
 }
 
 impl ApplicationHandler for WinitApp {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        let AppState::Initializing(ref descriptor) = self.app else {
-            return;
-        };
-
         let window_attributes = Window::default_attributes()
-            .with_title(descriptor.title)
-            .with_inner_size(descriptor.size);
-        let Ok(window) = event_loop.create_window(window_attributes) else {
-            return;
-        };
+            .with_title("Corvus")
+            .with_inner_size(PhysicalSize::new(1280, 720));
 
-        self.app = AppState::Running(App::new(window));
+        let window = event_loop.create_window(window_attributes).unwrap();
+
+        self.game = Some(Game::new(window));
     }
 
     fn window_event(
@@ -52,17 +35,13 @@ impl ApplicationHandler for WinitApp {
             return;
         }
 
-        if let AppState::Running(app) = &mut self.app {
-            app.window_event(event, event_loop);
+        if let Some(game) = &mut self.game {
+            game.process_window_event(event_loop, event);
         };
     }
 }
 
 fn main() {
     let event_loop = EventLoop::new().unwrap();
-    let mut app = WinitApp::new(AppDescriptor {
-        title: "Corvus",
-        size: PhysicalSize::new(800, 600),
-    });
-    _ = event_loop.run_app(&mut app);
+    _ = event_loop.run_app(&mut WinitApp::new());
 }
