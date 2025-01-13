@@ -1,4 +1,4 @@
-use crate::core::{assets::handle::HandleId, utils::Cache};
+use crate::core::utils::{Cache, HandleId};
 
 use super::specifications::GpuImage;
 

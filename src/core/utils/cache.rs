@@ -1,7 +1,7 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 pub struct Cache<K: PartialEq + Eq + std::hash::Hash, V> {
-    items: HashMap<K, V>,
+    items: HashMap<K, Arc<V>>,
 }
 
 impl<K: PartialEq + Eq + std::hash::Hash, V> Cache<K, V> {
@@ -12,10 +12,10 @@ impl<K: PartialEq + Eq + std::hash::Hash, V> Cache<K, V> {
     }
 
     pub fn insert(&mut self, key: K, item: V) {
-        self.items.entry(key).or_insert(item);
+        self.items.entry(key).or_insert(Arc::new(item));
     }
 
-    pub fn remove(&mut self, key: &K) -> Option<V> {
+    pub fn remove(&mut self, key: &K) -> Option<Arc<V>> {
         self.items.remove(key)
     }
 
@@ -23,7 +23,7 @@ impl<K: PartialEq + Eq + std::hash::Hash, V> Cache<K, V> {
         self.items.contains_key(key)
     }
 
-    pub fn get(&self, key: &K) -> Option<&V> {
+    pub fn get(&self, key: &K) -> Option<&Arc<V>> {
         self.items.get(key)
     }
 }

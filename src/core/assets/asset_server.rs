@@ -1,6 +1,6 @@
 use std::collections::{HashMap, VecDeque};
 
-use super::handle::{Handle, HandleId};
+use crate::core::utils::{Handle, HandleId};
 
 pub struct AssetServer {
     path_to_handle_id: HashMap<String, HandleId>,

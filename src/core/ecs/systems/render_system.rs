@@ -1,5 +1,4 @@
 use crate::core::{
-    assets::Assets,
     ecs::{
         components::{OrthoCamera, Sprite, Transform},
         World,
@@ -15,7 +14,7 @@ pub fn set_camera_projection(world: &World, sprite_renderer: &mut SpriteRenderer
     sprite_renderer.update_view_projection(ortho_camera.get_view_projection());
 }
 
-pub fn draw_sprites(world: &World, assets: &Assets, sprite_renderer: &mut SpriteRenderer) {
+pub fn draw_sprites(world: &World, sprite_renderer: &mut SpriteRenderer) {
     let mut sprites = world
         .entities()
         .filter_map(|entity| {
@@ -41,10 +40,6 @@ pub fn draw_sprites(world: &World, assets: &Assets, sprite_renderer: &mut Sprite
     });
 
     for (transform, sprite) in sprites {
-        let Some(image) = assets.images.get(&sprite.image_id.id()) else {
-            continue;
-        };
-
         // let (u_min, v_min, u_max, v_max) = {
         //     let mut uvs = atlas.calculate_uv(&sprite.region_id);
 
@@ -79,13 +74,12 @@ pub fn draw_sprites(world: &World, assets: &Assets, sprite_renderer: &mut Sprite
             .collect::<Vec<_>>();
 
         let sprite_instance = SpriteInstance {
-            image_id: sprite.image_id.clone(),
+            handle_image: sprite.handle_image.clone(),
             color: [1.0, 1.0, 1.0, 1.0],
             position,
             uv_coords: vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]],
         };
 
-        sprite_renderer.upload_texture(sprite.image_id.id(), image);
         sprite_renderer.draw(sprite_instance);
     }
 }

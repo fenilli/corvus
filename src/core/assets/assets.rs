@@ -1,6 +1,6 @@
-use crate::core::utils::Cache;
+use crate::core::utils::{Cache, HandleId};
 
-use super::{handle::HandleId, Image};
+use super::Image;
 
 pub struct Assets {
     pub images: Cache<HandleId, Image>,

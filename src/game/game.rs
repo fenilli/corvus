@@ -10,6 +10,7 @@ use crate::core::{
         World,
     },
     render::{graphics, SpriteRenderer},
+    resources::Resources,
 };
 
 pub struct Game {
@@ -20,6 +21,7 @@ pub struct Game {
     sprite_renderer: SpriteRenderer,
 
     assets: Assets,
+    resources: Resources,
     asset_server: AssetServer,
     world: World,
 
@@ -34,7 +36,9 @@ impl Game {
         let sprite_renderer = SpriteRenderer::new(device.clone(), queue.clone());
 
         let assets = Assets::new();
+        let resources = Resources::new();
         let mut asset_server = AssetServer::new();
+
         let mut world = World::new();
         world.register_component::<Transform>();
         world.register_component::<Sprite>();
@@ -76,6 +80,7 @@ impl Game {
             sprite_renderer,
 
             assets,
+            resources,
             asset_server,
             world,
 
@@ -88,7 +93,13 @@ impl Game {
         event_loop: &winit::event_loop::ActiveEventLoop,
         event: winit::event::WindowEvent,
     ) {
-        asset_system::load_pending_assets(&mut self.asset_server, &mut self.assets);
+        asset_system::load_pending_assets(
+            &self.device,
+            &self.queue,
+            &mut self.asset_server,
+            &mut self.assets,
+            &mut self.resources,
+        );
 
         match event {
             WindowEvent::RedrawRequested => {
@@ -116,9 +127,10 @@ impl Game {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
 
         render_system::set_camera_projection(&self.world, &mut self.sprite_renderer);
-        render_system::draw_sprites(&self.world, &self.assets, &mut self.sprite_renderer);
+        render_system::draw_sprites(&self.world, &mut self.sprite_renderer);
 
-        self.sprite_renderer.render(&view, &mut encoder);
+        self.sprite_renderer
+            .render(&self.resources, &view, &mut encoder);
 
         self.queue.submit(std::iter::once(encoder.finish()));
         frame.present();

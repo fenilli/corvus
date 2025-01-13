@@ -2,11 +2,9 @@ use std::{collections::HashMap, sync::Arc};
 
 use wgpu::include_wgsl;
 
-use crate::core::assets::{handle::HandleId, Image};
+use crate::core::{resources::Resources, utils::HandleId};
 
-use super::{
-    graphics, resources::specifications::GpuImage, Camera, Resources, SpriteInstance, Vertex,
-};
+use super::{graphics, Camera, SpriteInstance, Vertex};
 
 #[derive(Default)]
 pub struct DrawCall {
@@ -20,7 +18,6 @@ pub struct SpriteRenderer {
     queue: Arc<wgpu::Queue>,
     camera: Camera,
     texture_bind_group_layout: wgpu::BindGroupLayout,
-    resources: Resources,
 
     draw_calls: HashMap<HandleId, DrawCall>,
 
@@ -32,7 +29,6 @@ pub struct SpriteRenderer {
 impl SpriteRenderer {
     pub fn new(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>) -> Self {
         let camera = Camera::new(&device, queue.clone());
-        let resources = Resources::new();
 
         let draw_calls = HashMap::new();
 
@@ -112,7 +108,6 @@ impl SpriteRenderer {
             queue,
             camera,
             texture_bind_group_layout,
-            resources,
 
             draw_calls,
 
@@ -122,57 +117,10 @@ impl SpriteRenderer {
         }
     }
 
-    pub fn upload_texture(&mut self, handle_id: HandleId, image: &Image) {
-        if self.resources.textures.exists(&handle_id) {
-            return;
-        }
-
-        let dimensions = image.dimensions;
-
-        let size = wgpu::Extent3d {
-            width: dimensions.0,
-            height: dimensions.1,
-            depth_or_array_layers: 1,
-        };
-
-        let texture_desc = &wgpu::TextureDescriptor {
-            label: None,
-            size,
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8UnormSrgb,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        };
-
-        let texture = self.device.create_texture(&texture_desc);
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-        self.queue.write_texture(
-            wgpu::ImageCopyTexture {
-                texture: &texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            &image.data,
-            wgpu::ImageDataLayout {
-                offset: 0,
-                bytes_per_row: Some(dimensions.0 * 4),
-                rows_per_image: None,
-            },
-            size,
-        );
-
-        let gpu_image = GpuImage::new(texture, view);
-        self.resources.textures.insert(handle_id, gpu_image);
-    }
-
     pub fn draw(&mut self, sprite_instance: SpriteInstance) {
         let batch = self
             .draw_calls
-            .entry(sprite_instance.image_id.id())
+            .entry(sprite_instance.handle_image.id())
             .or_default();
 
         let vertex_data: Vec<Vertex> = sprite_instance
@@ -200,7 +148,12 @@ impl SpriteRenderer {
         self.camera.update_view_projection(view_projection);
     }
 
-    pub fn render(&mut self, view: &wgpu::TextureView, encoder: &mut wgpu::CommandEncoder) {
+    pub fn render(
+        &mut self,
+        resources: &Resources,
+        view: &wgpu::TextureView,
+        encoder: &mut wgpu::CommandEncoder,
+    ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("SpriteRenderer:render_pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -220,7 +173,7 @@ impl SpriteRenderer {
 
         let mut offsets = (0, 0);
         for (handle_id, draw_call) in &self.draw_calls {
-            let texture = self.resources.textures.get(handle_id).unwrap();
+            let texture = resources.textures.get(handle_id).unwrap();
 
             let texture_bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some(format!("SpriteRenderer:{}", handle_id.id()).as_str()),
