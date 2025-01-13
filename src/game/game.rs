@@ -3,14 +3,15 @@ use std::sync::Arc;
 use winit::{event::WindowEvent, window::Window};
 
 use crate::core::{
-    assets::{AssetServer, Assets},
+    assets::{AssetServer, Assets, Image},
     ecs::{
-        components::{OrthoCamera, Sprite, Transform},
+        components::{OrthoCamera, Rect, Sprite, Transform},
         systems::{asset_system, render_system},
         World,
     },
     render::{graphics, SpriteRenderer},
     resources::Resources,
+    utils::Handle,
 };
 
 pub struct Game {
@@ -42,6 +43,8 @@ impl Game {
         let mut world = World::new();
         world.register_component::<Transform>();
         world.register_component::<Sprite>();
+        world.register_component::<Handle<Image>>();
+        world.register_component::<Rect>();
         world.register_component::<OrthoCamera>();
 
         let c = world.spawn();
@@ -54,23 +57,16 @@ impl Game {
         world.insert_component(
             e,
             Transform::new(
-                glam::vec3(0.0, 0.0, 0.0),
+                glam::vec3(16.0, 0.0, 0.0),
                 glam::vec2(1.0, 1.0),
                 0.0,
                 glam::vec2(0.0, 1.0),
             ),
         );
 
-        world.insert_component(
-            e,
-            Sprite::new(
-                asset_server.load("assets/character/idle.png"),
-                [1.0, 1.0, 1.0, 1.0],
-                (100, 100),
-                false,
-                false,
-            ),
-        );
+        world.insert_component(e, asset_server.load::<Image>("assets/character/idle.png"));
+        world.insert_component(e, Sprite::new([1.0, 1.0, 1.0, 1.0], false, false));
+        world.insert_component(e, Rect::new(32, 32, 16, 16));
 
         Self {
             surface,
@@ -127,7 +123,7 @@ impl Game {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
 
         render_system::set_camera_projection(&self.world, &mut self.sprite_renderer);
-        render_system::draw_sprites(&self.world, &mut self.sprite_renderer);
+        render_system::draw_sprites(&self.world, &self.assets, &mut self.sprite_renderer);
 
         self.sprite_renderer
             .render(&self.resources, &view, &mut encoder);
