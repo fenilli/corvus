@@ -2,9 +2,11 @@ use std::{collections::HashMap, sync::Arc};
 
 use wgpu::include_wgsl;
 
-use crate::core::assets::handle::HandleId;
+use crate::core::assets::{handle::HandleId, Image};
 
-use super::{Camera, Resources, SpriteInstance, Vertex};
+use super::{
+    graphics, resources::specifications::GpuImage, Camera, Resources, SpriteInstance, Vertex,
+};
 
 #[derive(Default)]
 pub struct DrawCall {
@@ -13,20 +15,11 @@ pub struct DrawCall {
     instances: u16,
 }
 
-impl DrawCall {
-    pub fn new(vertex_data: Vec<Vertex>, index_data: Vec<u16>) -> Self {
-        Self {
-            vertex_data,
-            index_data,
-            instances: 0,
-        }
-    }
-}
-
 pub struct SpriteRenderer {
     device: Arc<wgpu::Device>,
     queue: Arc<wgpu::Queue>,
     camera: Camera,
+    texture_bind_group_layout: wgpu::BindGroupLayout,
     resources: Resources,
 
     draw_calls: HashMap<HandleId, DrawCall>,
@@ -43,9 +36,32 @@ impl SpriteRenderer {
 
         let draw_calls = HashMap::new();
 
+        let texture_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("SpriteRenderer:texture_bind_group_layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+            });
+
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("SpriteRenderer:pipeline_layout"),
-            bind_group_layouts: &[&camera.bind_group_layout],
+            bind_group_layouts: &[&camera.bind_group_layout, &texture_bind_group_layout],
             push_constant_ranges: &[],
         });
 
@@ -95,6 +111,7 @@ impl SpriteRenderer {
             device,
             queue,
             camera,
+            texture_bind_group_layout,
             resources,
 
             draw_calls,
@@ -103,6 +120,53 @@ impl SpriteRenderer {
             index_buffer,
             pipeline,
         }
+    }
+
+    pub fn upload_texture(&mut self, handle_id: HandleId, image: &Image) {
+        if self.resources.textures.exists(&handle_id) {
+            return;
+        }
+
+        let dimensions = image.dimensions;
+
+        let size = wgpu::Extent3d {
+            width: dimensions.0,
+            height: dimensions.1,
+            depth_or_array_layers: 1,
+        };
+
+        let texture_desc = &wgpu::TextureDescriptor {
+            label: None,
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        };
+
+        let texture = self.device.create_texture(&texture_desc);
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        self.queue.write_texture(
+            wgpu::ImageCopyTexture {
+                texture: &texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &image.data,
+            wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(dimensions.0 * 4),
+                rows_per_image: None,
+            },
+            size,
+        );
+
+        let gpu_image = GpuImage::new(texture, view);
+        self.resources.textures.insert(handle_id, gpu_image);
     }
 
     pub fn draw(&mut self, sprite_instance: SpriteInstance) {
@@ -155,7 +219,28 @@ impl SpriteRenderer {
         render_pass.set_bind_group(0, &self.camera.bind_group, &[]);
 
         let mut offsets = (0, 0);
-        for (_, draw_call) in &self.draw_calls {
+        for (handle_id, draw_call) in &self.draw_calls {
+            let texture = self.resources.textures.get(handle_id).unwrap();
+
+            let texture_bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some(format!("SpriteRenderer:{}", handle_id.id()).as_str()),
+                layout: &self.texture_bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&texture.view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&graphics::create_sampler(
+                            &self.device,
+                        )),
+                    },
+                ],
+            });
+
+            render_pass.set_bind_group(1, &texture_bind_group, &[]);
+
             let vertex_data = bytemuck::cast_slice(&draw_call.vertex_data);
             let index_data = bytemuck::cast_slice(&draw_call.index_data);
 

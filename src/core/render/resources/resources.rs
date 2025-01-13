@@ -1,13 +1,15 @@
 use crate::core::{assets::handle::HandleId, utils::Cache};
 
+use super::specifications::GpuImage;
+
 pub struct Resources {
-    pub texture_bind_groups: Cache<HandleId, wgpu::BindGroup>,
+    pub textures: Cache<HandleId, GpuImage>,
 }
 
 impl Resources {
     pub fn new() -> Self {
         Self {
-            texture_bind_groups: Cache::new(),
+            textures: Cache::new(),
         }
     }
 }

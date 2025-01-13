@@ -24,8 +24,8 @@ fn vs_main(vertex: VertexInput) -> VertexOutput {
     return output;
 }
 
-// @group(1) @binding(0) var texture: texture_2d<f32>;
-// @group(1) @binding(1) var texture_sampler: sampler;
+@group(1) @binding(0) var texture: texture_2d<f32>;
+@group(1) @binding(1) var texture_sampler: sampler;
 
 struct FragmentInput {
     @location(0) color: vec4<f32>,
@@ -34,6 +34,5 @@ struct FragmentInput {
 
 @fragment
 fn fs_main(fragment: FragmentInput) -> @location(0) vec4<f32> {
-    return fragment.color;
-    // return fragment.color * textureSample(texture, texture_sampler, fragment.uv);
+    return fragment.color * textureSample(texture, texture_sampler, fragment.uv);
 }

@@ -116,7 +116,7 @@ impl Game {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
 
         render_system::set_camera_projection(&self.world, &mut self.sprite_renderer);
-        render_system::draw_sprites(&self.world, &mut self.sprite_renderer);
+        render_system::draw_sprites(&self.world, &self.assets, &mut self.sprite_renderer);
 
         self.sprite_renderer.render(&view, &mut encoder);
 
