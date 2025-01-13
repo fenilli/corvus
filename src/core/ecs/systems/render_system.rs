@@ -1,11 +1,10 @@
 use crate::core::{
-    assets::{Assets, Image},
+    assets::Assets,
     ecs::{
-        components::{OrthoCamera, Rect, Sprite, Transform},
+        components::{OrthoCamera, Sprite, Transform},
         World,
     },
     render::{SpriteInstance, SpriteRenderer},
-    utils::Handle,
 };
 
 pub fn set_camera_projection(world: &World, sprite_renderer: &mut SpriteRenderer) {
@@ -22,13 +21,12 @@ pub fn draw_sprites(world: &World, assets: &Assets, sprite_renderer: &mut Sprite
         .filter_map(|entity| {
             let transform = world.get_component::<Transform>(entity)?;
             let sprite = world.get_component::<Sprite>(entity)?;
-            let image = world.get_component::<Handle<Image>>(entity)?;
 
-            Some((entity, transform, sprite, image))
+            Some((transform, sprite))
         })
         .collect::<Vec<_>>();
 
-    sprites.sort_by(|(_, a_transform, _, _), (_, b_transform, _, _)| {
+    sprites.sort_by(|(a_transform, _), (b_transform, _)| {
         a_transform
             .position
             .z
@@ -42,28 +40,23 @@ pub fn draw_sprites(world: &World, assets: &Assets, sprite_renderer: &mut Sprite
             })
     });
 
-    for (entity, transform, sprite, image_handle) in sprites {
-        let Some(image) = assets.images.get(&image_handle.id()) else {
+    for (transform, sprite) in sprites {
+        let Some(image) = assets.images.get(&sprite.texture_handle.id()) else {
             continue;
-        };
-
-        let rect = world.get_component::<Rect>(entity);
-
-        let (width, height) = if let Some(rect) = &rect {
-            (rect.w, rect.h)
-        } else {
-            image.dimensions
         };
 
         let position = [[-1.0, 1.0], [-1.0, -1.0], [1.0, -1.0], [1.0, 1.0]]
             .iter()
             .map(|&[x, y]| {
-                let sized = glam::vec2(x * width as f32, y * height as f32);
+                let sized = glam::vec2(
+                    x * sprite.source_rect.w as f32,
+                    y * sprite.source_rect.h as f32,
+                );
                 let scaled = sized * transform.scale;
                 let originated = scaled
                     + glam::vec2(
-                        transform.origin.x * width as f32,
-                        transform.origin.y * height as f32,
+                        transform.origin.x * sprite.source_rect.w as f32,
+                        transform.origin.y * sprite.source_rect.h as f32,
                     );
                 let rotated = glam::Mat2::from_angle(transform.rotation.to_radians()) * originated;
                 let translated = rotated + transform.position.truncate();
@@ -72,7 +65,8 @@ pub fn draw_sprites(world: &World, assets: &Assets, sprite_renderer: &mut Sprite
             })
             .collect::<Vec<_>>();
 
-        let uv_coords = if let Some(rect) = &rect {
+        let uv_coords = {
+            let rect = &sprite.source_rect;
             let (width, height) = image.dimensions;
 
             let u_min = rect.x as f32 / width as f32;
@@ -98,12 +92,10 @@ pub fn draw_sprites(world: &World, assets: &Assets, sprite_renderer: &mut Sprite
                 [u_max, v_max],
                 [u_max, v_min],
             ]
-        } else {
-            vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]
         };
 
         let sprite_instance = SpriteInstance {
-            handle_image: image_handle.clone(),
+            handle_image: sprite.texture_handle.clone(),
             color: [1.0, 1.0, 1.0, 1.0],
             position,
             uv_coords,

@@ -5,13 +5,12 @@ use winit::{event::WindowEvent, window::Window};
 use crate::core::{
     assets::{AssetServer, Assets, Image},
     ecs::{
-        components::{OrthoCamera, Rect, Sprite, Transform},
+        components::{OrthoCamera, Sprite, Transform},
         systems::{asset_system, render_system},
         World,
     },
-    render::{graphics, SpriteRenderer},
+    render::{graphics, Rect, SpriteRenderer},
     resources::Resources,
-    utils::Handle,
 };
 
 pub struct Game {
@@ -43,8 +42,6 @@ impl Game {
         let mut world = World::new();
         world.register_component::<Transform>();
         world.register_component::<Sprite>();
-        world.register_component::<Handle<Image>>();
-        world.register_component::<Rect>();
         world.register_component::<OrthoCamera>();
 
         let c = world.spawn();
@@ -64,9 +61,16 @@ impl Game {
             ),
         );
 
-        world.insert_component(e, asset_server.load::<Image>("assets/character/idle.png"));
-        world.insert_component(e, Sprite::new([1.0, 1.0, 1.0, 1.0], false, false));
-        world.insert_component(e, Rect::new(32, 32, 16, 16));
+        world.insert_component(
+            e,
+            Sprite::new(
+                asset_server.load::<Image>("assets/character/idle.png"),
+                Rect::new(32, 32, 16, 16),
+                [1.0, 1.0, 1.0, 1.0],
+                false,
+                false,
+            ),
+        );
 
         Self {
             surface,
